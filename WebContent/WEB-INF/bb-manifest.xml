@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<manifest>
+	<!-- core extension information -->
+	<plugin>
+		<name value="Copyright Editor" />
+		<handle value="metadata" />
+		<description value="Copryright Editor" />
+		<version value="1.0.0" />
+		<requires>
+			<bbversion value="9.0" />
+		</requires>
+		<vendor>
+			<id value="ubc" />
+			<name value="University of British Columbia" />
+			<url value="http://www.ubc.ca/" />
+			<description value="University of British Columbia" />
+		</vendor>
+		<http-actions>
+			<config value="settings/index" />
+		</http-actions>
+		<!-- These two JSPs are displayed when the "remove" and "properties" buttons -->
+		<!-- are pressed on the Building Blocks administration page. -->
+		<!-- <http-actions> <config value="admin/configure.jsp"/> <remove value="admin/remove.jsp"/> 
+			</http-actions> -->
+		<application-defs>
+			<application handle="Copyright Editor" type="system"
+				use-ssl="false" name="CopyrightEditor" can-allow-guest="false">
+				<description lang="en_US">For bulk editing metadata.
+				</description>
+				<links>
+					<!-- <link>
+						<type value="cs_tool" />
+						<name value="Edit Copyright Status" />
+						<url value="tool.jsp" />
+						<description value="For bulk editing metadata" />
+					</link> -->
+					<link>
+						<type value="cs_modify_file" />
+						<name value="Edit Copyright Status" />
+						<url value="/copyright/list" />
+						<description value="For bulk editing metadata modify file" />
+					</link>
+					<link>
+						<type value="cs_action" />
+						<name value="Edit Copyright Status" />
+						<url value="/copyright/list" />
+						<description value="Set Copyright Metadata for multiple files" />
+					</link>
+					<link>
+						<type value="cs_modify_folder" />
+						<name value="Edit Copyright Status" />
+						<url value="/copyright/list" />
+						<description value="Set Copyright Metadata for file/folder" />
+					</link>
+				</links>
+			</application>
+		</application-defs>
+
+		<!-- Portal Module Definitions -->
+		<module-defs>
+		</module-defs>
+
+
+		<!-- code permissions required for proper operation -->
+		<permissions>
+			<permission type="java.lang.reflect.ReflectPermission" name="suppressAccessChecks" />
+			<permission type="java.security.SecurityPermission" name="*" />
+            <permission type="java.lang.RuntimePermission" name="*" />
+            <permission type="java.net.SocketPermission" name="*" actions="connect,resolve" />
+            <permission type="java.lang.reflect.ReflectPermission" name="suppressAccessChecks" />
+            <permission type="java.util.PropertyPermission" name="*" actions="read,write" />
+            <permission type="blackboard.data.AttributePermission" name="user.authinfo" actions="get" />
+			<permission type="attribute" name="user.*" actions="get,set" />
+			<permission type="persist" name="Content" actions="persist" />
+			<permission type="socket" name="*" actions="connect" />
+		</permissions>
+
+	</plugin>
+
+</manifest>

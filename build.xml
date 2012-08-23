@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project name="ubc-metadata Building Block" default="deploy-b2" basedir=".">
+	<description>Metadata Manager</description>
+
+	<property name="build.dir" value="${basedir}/build/"/>
+	<property name="b2.package.name" value="${basedir}/ubc-metadata"/>
+
+	<target name="deploy-b2" depends="package-war">
+		<taskdef name="b2deploy" classpath="${basedir}/lib/b2deploy-task.jar" classname="org.oscelot.ant.B2DeployTask" />
+		<b2deploy localfilepath="${b2.package.name}.war" host="192.168.56.101" courseorgavailable="true" clean="true" />
+	</target>
+
+	<target name="package-war">
+		<war destfile="${b2.package.name}.war" basedir="webContent">
+			<classes dir="bin"></classes>
+		</war>
+	</target>
+	
+
+	<target name="check-compatibility">
+        <taskdef name="fibbba" classname="com.blackboard.fibbba.CheckFibbbaTask" classpath="${basedir}/lib/fibbba-ant.jar" />
+        <fibbba srcfile="${b2.package.name}.war" email="pan.luo@ubc.ca"/>
+	</target>
+	
+	
+	<target name="proguard" depends="package-war">
+        <taskdef
+            classpath="${basedir}/lib/proguard.jar"
+            resource="proguard/ant/task.properties" />
+
+        <proguard>
+		  -injars      ${b2.package.name}.war
+		  -outjars     ${b2.package.name}_proguard.war
+		  -libraryjars ${java.home}/lib/rt.jar
+		  -libraryjars ${basedir}/lib/servlet-api-2.4.jar
+		  -libraryjars ${basedir}/WebContent/WEB-INF/lib/jstl-1.2.jar 
+		  -dontskipnonpubliclibraryclasses
+		  -dontobfuscate
+		  -ignorewarnings
+		  -keepclasseswithmembers public class * {
+		      public static void main(java.lang.String[]);
+		  }
+		  -keepclassmembers class * implements java.io.Serializable {
+			    private void writeObject(java.io.ObjectOutputStream);
+			    private void readObject(java.io.ObjectInputStream);
+			    java.lang.Object writeReplace();
+			    java.lang.Object readResolve();
+		  }
+			
+		  -keepclassmembers class * extends java.lang.Enum {
+			    public static **[] values();
+			    public static ** valueOf(java.lang.String);
+		  }
+        </proguard>
+    </target>
+	
+</project>
