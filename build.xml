@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project name="ubc-metadata Building Block" default="deploy-b2" basedir=".">
+<project name="ubc-metadata Building Block" default="deploy" basedir=".">
 	<description>Metadata Manager</description>
 
 	<property name="build.dir" value="${basedir}/build/"/>
 	<property name="b2.package.name" value="${basedir}/ubc-metadata"/>
 
-	<target name="deploy-b2" depends="package-war">
+	<target name="deploy" depends="package-war">
 		<taskdef name="b2deploy" classpath="${basedir}/lib/b2deploy-task.jar" classname="org.oscelot.ant.B2DeployTask" />
 		<b2deploy localfilepath="${b2.package.name}.war" host="192.168.56.101" courseorgavailable="true" clean="true" />
 	</target>

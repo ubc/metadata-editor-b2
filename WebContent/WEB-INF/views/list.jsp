@@ -8,11 +8,15 @@
 	blackboard.platform.contentsystem.manager.*,
 	blackboard.platform.contentsystem.service.*,java.io.*,java.util.*,
 	ca.ubc.ctlt.metadataeditor.*,
-	blackboard.platform.forms.Form
+	blackboard.platform.forms.Form,
+	com.spvsoftwareproducts.blackboard.utils.B2Context
 	"%>
 <%@ taglib prefix="bbNG" uri="/bbNG"%>
 <%@ taglib uri="/bbUI" prefix="bbUI"%>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core"%>
+<%
+	B2Context b2context = new B2Context(request);
+%>
 
 <bbUI:inlineReceipt />
 
@@ -23,73 +27,60 @@
 			<bbNG:breadcrumb>Copyright</bbNG:breadcrumb>
 		</bbNG:breadcrumbBar>
 		<bbNG:pageTitleBar>Editing Copyright Status</bbNG:pageTitleBar>
+
 	</bbNG:pageHeader>
 
 	<bbNG:form action="save" method="post">
 		<bbNG:dataCollection>
 			<bbNG:step title="Verify selected files">
-				<bbNG:inventoryList collection="${files}" objectVar="file"
-					className="FileWrapper" description="List of selected files."
-					showAll="true">
-					<bbNG:listCheckboxElement name="fileSelected"
-						value="${file.filePath}" />
+				<bbNG:inventoryList collection="${files}" objectVar="file" 
+					className="FileWrapper" description="List of selected files." enableSelectEntireList="${canSelectAll}" >
+					<bbNG:listCheckboxElement name="fileSelected" value="${file.filePath}" />
 					<bbNG:listElement label="File" name="file" isRowHeader="true"><a href="/bbcswebdav${file.filePath}" target="_blank">${file.filePath}</a></bbNG:listElement>
-					<bbNG:listElement label="Copyright Status" name="copyright"
-						isRowHeader="false">${file.metaValue}</bbNG:listElement>
+					<c:forEach items="${attributes}" varStatus="status" var="attribute">
+						<c:if test="${attribute.type == 'Boolean'}">
+							<jsp:useBean id="attribute" type="ca.ubc.ctlt.metadataeditor.CopyrightAttribute" />
+							<bbNG:listElement label="${attribute.label}" name="${attribute.id}" isRowHeader="false">
+								<%="true".equals(file.getMetaValue(b2context.getSetting(MetadataUtil.FORM_ID)).get(attribute.getId()))?"Y":""%>
+							</bbNG:listElement>
+						</c:if>
+					</c:forEach>
+					<bbNG:listElement label="Last Modified By" name="lastModifiedBy" isRowHeader="false">${file.lastModifedUser}</bbNG:listElement>
+					<bbNG:listElement label="Last Modified On" name="lastModifiedOn" isRowHeader="false">${file.lastModifed}</bbNG:listElement>
 				</bbNG:inventoryList>
 			</bbNG:step>
-			<bbNG:step
-				title="Copyright permission to apply to the selected files">
-				<bbNG:dataElement label="Copyright Status" isRequired="true"
-					labelFor="copyright_select">
-					<bbNG:selectElement name="copyright" isRequired="true"
-						id="copyright_select">
-						<bbNG:selectOptionElement value="Self Created"
-							optionLabel="Self Created" />
-						<bbNG:selectOptionElement value="UBC Licensed Material"
-							optionLabel="UBC Licensed Material" />
-						<bbNG:selectOptionElement value="Permission Granted"
-							optionLabel="Permission Granted" />
-						<bbNG:selectOptionElement value="Openly Licensed Material "
-							optionLabel="Openly Licensed Material " />
-						<bbNG:selectOptionElement value="Fair-Dealing Exception"
-							optionLabel="Fair-Dealing Exception" />
-					</bbNG:selectElement>
-				</bbNG:dataElement>
-				<ul>
-					<li><b>Self Created</b> = I am the sole author and own the
-						copyright in this file.</li>
-					<li><b>UBC Licensed Material</b> = The terms of an existing <a
-						href="http://licenses.library.ubc.ca/" target="_blank"
-						title="UBC electronic resources licensing information">UBC
-							license</a> allows me to upload and use this file in Connect.</li>
-					<li><b>Permission Granted</b> = I have written permission from
-						the copyright holder to upload and use this file.</li>
-					<li><b>Openly Licensed Material</b> = The copyright holders of
-						this file grants permission for its use through a Creative Commons
-						or other open license, and the uploading and use of this file in
-						Connect is compliant with such license terms.</li>
-					<li><b>Fair-Dealing Exception</b> = I am uploading and using
-						the file in Connect for the purposes of criticism, review or news
-						reporting, have properly attributed the source and author of the
-						file and am otherwise in compliance with the <a
-						href="http://copyright.ubc.ca/fair-dealing-guidelines-for-members-of-the-ubc-community/"
-						target="_blank" title="Fair Dealing guidelines for UBC">Fair
-							Dealing Guidelines for Members of the UBC Community</a>.</li>
-				</ul>
+			<bbNG:step title="Copyright permission to apply to the selected files">
+				<bbNG:collapsibleList id="md" isDynamic="false">
+			        <bbNG:collapsibleListItem id="1" title="${form.pageHeader}" expandOnPageLoad="true">
+					<ul>
+						<bbUI:formBody formBody="${form}" name="copyright" hideStepLabel="true"/>
+					</ul>
+     				</bbNG:collapsibleListItem>
 
-For more information and assistance, please visit the <a
-					href="http://copyright.ubc.ca/connect" target="_blank"
-					title="UBC Copyright site">UBC Copyright site</a>.
+        		</bbNG:collapsibleList>
 			</bbNG:step>
 			<bbNG:stepSubmit />
 			<input type="hidden" name="referer" value="${referer}" />
-			<input type="hidden" name="path" value="${path}" />
-			<c:forEach var="file" items="${files}">
-				<input type="hidden" name="files" value="${file.filePath}" />
+			<c:if test="${not empty path}">
+				<input type="hidden" name="path" value="${path}" />
+			</c:if>
+			<c:forEach var="file" items="${fileSet}">
+				<input type="hidden" name="files" value="${file}" />
 			</c:forEach>
 
 		</bbNG:dataCollection>
 	</bbNG:form>
 	<bbNG:okButton url="${referer}" />
+	
+	<bbNG:jsBlock>
+	<script type="text/javascript">
+		// first select the individual user checkboxes 
+		var checkboxes = document.forms[0].getInputs('checkbox', 'fileSelected');
+		checkboxes.each(
+			function (box) { box.checked = true; }
+		);
+		// then select the select all users checkbox
+		$('listContainer_selectAll').checked = true;
+	</script>
+	</bbNG:jsBlock>
 </bbNG:learningSystemPage>

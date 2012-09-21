@@ -4,21 +4,10 @@
 <%@page import="com.spvsoftwareproducts.blackboard.utils.B2Context,
 	ca.ubc.ctlt.metadataeditor.MetadataUtil"
    errorPage="../error.jsp"%>
-<%@taglib uri="/bbNG" prefix="bbNG" %>
+<%@taglib prefix="bbNG" uri="/bbNG"%>
+<%@taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core"%>
+
 <bbNG:genericPage title="Copyright Settings" entitlement="system.admin.VIEW">
-
-<%
-  B2Context b2Context = new B2Context(request);
-
-  if (request.getMethod().equalsIgnoreCase("POST")) {
-    String template_id = b2Context.getRequestParameter(MetadataUtil.TEMPLATE_ID, "").trim();
-    b2Context.setSetting(MetadataUtil.TEMPLATE_ID, template_id);
-
-    b2Context.persistSettings();
-  }
-
-  pageContext.setAttribute("bundle", b2Context.getResourceStrings());
-%>
   <bbNG:pageHeader instructions="Instruction">
     <bbNG:breadcrumbBar environment="SYS_ADMIN_PANEL" navItem="admin_plugin_manage">
       <bbNG:breadcrumb title="Copyright Settings" />
@@ -27,9 +16,13 @@
   </bbNG:pageHeader>
   <bbNG:form action="" id="id_simpleForm" name="simpleForm" method="post" onsubmit="return validateForm();">
   <bbNG:dataCollection markUnsavedChanges="true" showSubmitButtons="true">
-    <bbNG:step hideNumber="false" id="stepOne" title="Template Field Id" instructions="template field id">
-      <bbNG:dataElement isRequired="true" label="Copyright Metadata Template Field ID">
-        <bbNG:textElement name="<%=MetadataUtil.TEMPLATE_ID%>" value="<%=b2Context.getSetting(MetadataUtil.TEMPLATE_ID)%>" helpText="template id" size="30" minLength="1" />
+    <bbNG:step hideNumber="false" id="stepOne" title="Select a template" instructions="">
+      <bbNG:dataElement isRequired="true" label="Copyright Metadata Template">
+      	<bbNG:selectElement name="<%=MetadataUtil.FORM_ID%>" isRequired="true" title="Copyright Template">
+      		<c:forEach var="form" items="${forms}">
+      			<bbNG:selectOptionElement value="${form.id.externalString}" optionLabel="${form.title}" isSelected="${template_id eq form.id.externalString}" />
+      		</c:forEach>
+      	</bbNG:selectElement>
       </bbNG:dataElement>
     </bbNG:step>
     <bbNG:stepSubmit hideNumber="false" showCancelButton="true" />
