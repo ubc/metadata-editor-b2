@@ -2,9 +2,9 @@
 <manifest>
 	<!-- core extension information -->
 	<plugin>
-		<name value="Copyright Editor" />
+		<name value="Metadata Editor" />
 		<handle value="metadata" />
-		<description value="Copryright Editor" />
+		<description value="Metadata Editor" />
 		<version value="1.0.0" />
 		<requires>
 			<bbversion value="9.0" />
@@ -23,10 +23,9 @@
 		<!-- <http-actions> <config value="admin/configure.jsp"/> <remove value="admin/remove.jsp"/> 
 			</http-actions> -->
 		<application-defs>
-			<application handle="Copyright Editor" type="system"
+			<application handle="Metadata Editor" type="system"
 				use-ssl="false" name="CopyrightEditor" can-allow-guest="false">
-				<description lang="en_US">For bulk editing metadata.
-				</description>
+				<description lang="en_US">For bulk editing metadata.</description>
 				<links>
 					<!-- <link>
 						<type value="cs_tool" />
@@ -37,20 +36,20 @@
 					<link>
 						<type value="cs_modify_file" />
 						<name value="Edit Copyright Status" />
-						<url value="/copyright/list" />
+						<url value="/metadata/list" />
 						<description value="For bulk editing metadata modify file" />
 					</link>
 					<link>
 						<type value="cs_action" />
 						<name value="Edit Copyright Status" />
-						<url value="/copyright/list" />
-						<description value="Set Copyright Metadata for multiple files" />
+						<url value="/metadata/list" />
+						<description value="Set Metadata for multiple files" />
 					</link>
 					<link>
 						<type value="cs_modify_folder" />
 						<name value="Edit Copyright Status" />
-						<url value="/copyright/list" />
-						<description value="Set Copyright Metadata for file/folder" />
+						<url value="/metadata/list" />
+						<description value="Set Metadata for file/folder" />
 					</link>
 				</links>
 			</application>

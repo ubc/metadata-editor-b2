@@ -4,7 +4,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Properties;
 import java.util.Set;
 
 import blackboard.cms.filesystem.CSContext;
@@ -19,19 +18,17 @@ import blackboard.persist.Id;
 import blackboard.persist.KeyNotFoundException;
 import blackboard.persist.PersistenceException;
 import blackboard.persist.metadata.AttributeDefinition;
-import blackboard.platform.context.ContextManagerFactory;
 import blackboard.platform.forms.Form;
-import blackboard.servlet.form.FormBody;
-import blackboard.servlet.form.struts.DynamicFormFactory;
+import blackboard.platform.log.LogServiceFactory;
 
 import com.xythos.common.api.XythosException;
 
 public class MetadataUtil {
 	public static final String FORM_ID = "form_id";
-	public static List<CopyrightAttribute> attributes = null;
+	public static List<MetadataAttribute> attributes = null;
 	
-	public static List<CopyrightAttribute> getCopyrightAtttributes(String formIdString) {
-		List<CopyrightAttribute> attributes = new ArrayList<CopyrightAttribute>();
+	public static List<MetadataAttribute> getMetadataAtttributes(String formIdString) {
+		List<MetadataAttribute> attributes = new ArrayList<MetadataAttribute>();
 		
 		try {
 			// find form by form ID
@@ -41,28 +38,28 @@ public class MetadataUtil {
 			// get all attributes in the form
 			Set<AttributeDefinition> adSet = form.getAttributeDefinitions();
 			for (AttributeDefinition ad : adSet) {
-				CopyrightAttribute attr = new CopyrightAttribute();
+				MetadataAttribute attr = new MetadataAttribute();
 				attr.setId(ad.getName());
 				attr.setLabel(ad.getLabel());
 				attr.setType(ad.getValueTypeLabel());
 				attributes.add(attr);
 			}
-		} catch (KeyNotFoundException e1) {
-			// TODO Auto-generated catch block
-			e1.printStackTrace();
-		} catch (PersistenceException e1) {
-			// TODO Auto-generated catch block
-			e1.printStackTrace();
+		} catch (KeyNotFoundException e) {
+			LogServiceFactory.getInstance().logError("Could not find the form. Check the form ID.", e);
+			throw new RuntimeException("Could not find the form. Check the form ID.", e);
+		} catch (PersistenceException e) {
+			LogServiceFactory.getInstance().logError("Exception occured while loading form or attribute.", e);
+			throw new RuntimeException("Loading form or attribute definitions failed.", e);
 		}
 		
 		return attributes;
 	}
 	
-	public static Map<String, String> getCopyright(String formIdString, String filepath) {
+	public static Map<String, String> getMetadata(String formIdString, String filepath) {
 		
 		// load all attribute IDs
 		if (attributes == null || attributes.isEmpty()) {
-			attributes = MetadataUtil.getCopyrightAtttributes(formIdString);
+			attributes = MetadataUtil.getMetadataAtttributes(formIdString);
 		}
 		
 		CSContext ctxCS = null;
@@ -73,46 +70,39 @@ public class MetadataUtil {
 			//CSEntryMetadata metadata = entry.getCSEntryMetadata();
 			XythosMetadata mdObj = MetadataManagerFactory.getInstance().load(entry.getFileSystemEntry());
 			BbAttributes bbAttributes = mdObj.getBbAttributes();
-			for (CopyrightAttribute attribute : attributes) {
+			for (MetadataAttribute attribute : attributes) {
 				//System.out.println(attribute.getType());
 				if ("Boolean".equals(attribute.getType())) {
 					ret.put(attribute.getId(), bbAttributes.getBoolean(attribute.getId()).toString());
-				} else if ("Short String".equals(attribute.getType())) {
+				} else if ("Short String".equals(attribute.getType())||"String".equals(attribute.getType())||"Long String".equals(attribute.getType()) || "Unlimited String".equals(attribute.getType())) {
 					ret.put(attribute.getId(), bbAttributes.getString(attribute.getId()));
+				} else if ("Integer".equals(attribute.getType())) {
+					ret.put(attribute.getId(), Integer.toString(bbAttributes.getInteger(attribute.getId())));
+				} else if ("Long".equals(attribute.getType())) {
+					ret.put(attribute.getId(), Long.toString(bbAttributes.getLong(attribute.getId())));
+				} else if ("Double".equals(attribute.getType())) {
+					ret.put(attribute.getId(), Double.toString(bbAttributes.getDouble(attribute.getId())));
+				} else if ("Float".equals(attribute.getType())) {
+					ret.put(attribute.getId(), Float.toString(bbAttributes.getFloat(attribute.getId())));
+				} else {
+					throw new RuntimeException("Unsupported attribute type: " + attribute.getType());
 				}
 			}
 		} catch (Exception e) {
-			System.out.println("Exception: "+e);
+			LogServiceFactory.getInstance().logError("Exception occured while loading attribute.", e);
 			ctxCS.rollback();
+			throw new RuntimeException("Error loading attribute!", e);
 		} finally {
 			if (ctxCS != null) {
 				try {
 					ctxCS.commit();
 				} catch (XythosException e) {
-					e.printStackTrace();
+					throw new RuntimeException(e);
 				}
 			}
 		}
 		
 		return ret;
-	}
-	
-	public static FormBody getFormBodyByFormId(String formIdString) throws Exception {
-		FormBody formBody = null;
-
-		// loading the copyright form
-		Id formId = Id.generateId(Form.DATA_TYPE, formIdString);
-		XythosMetadata metaObj = MetadataManagerFactory.getInstance().convertFromProperties( new Properties() );
-
-		ContextManagerFactory.getInstance().getContext().setAttribute( blackboard.servlet.form.FormBodyTag.NO_DEFAULT, "Y" );
-		Form form = CSFormManagerFactory.getInstance().loadFormById(formId);
-		metaObj.setAssociatedFormId( form.getId() );
-		
-		// find the form body to be populated in view
-		String key = "bb_" + form.getIntegrationKey().replace( "-", "" ) + "_";
-		formBody = DynamicFormFactory.generateForm( form, metaObj, FormBody.FormType.Edit, key );
-	
-		return formBody;
 	}
 	
 	public static void getFilesInPathWithMetadata(List<FileWrapper> files, CSEntry entry, int startIndex, int numResults) {

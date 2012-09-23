@@ -29,7 +29,7 @@ public class FileWrapper {
 	}
 
 	public Map<String, String> getMetaValue(String formIdString) {
-		return MetadataUtil.getCopyright(formIdString, mFileEntry.getFullPath());
+		return MetadataUtil.getMetadata(formIdString, mFileEntry.getFullPath());
 	}
 
 	public int getLastModifedUserId() {

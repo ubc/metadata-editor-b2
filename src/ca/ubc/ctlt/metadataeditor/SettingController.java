@@ -32,10 +32,10 @@ public class SettingController {
 			model.addAttribute("forms", forms);
 		} catch (KeyNotFoundException e) {
 			LogServiceFactory.getInstance().logError("Exception occured while loading the form. Could not find the form.", e);
-			ro.addErrorMessage("Could not find the form. Please contact administrator.", e);
+			throw new RuntimeException("Could not find the form. Please contact administrator.", e);
 		} catch (PersistenceException e) {
 			LogServiceFactory.getInstance().logError("Exception occured while loading the form: Please contact administrator.", e);
-			ro.addErrorMessage("Could not load the form. Please contact administrator.", e);
+			throw new RuntimeException("Could not load the form. Please contact administrator.", e);
 		}
 
 		B2Context b2Context = new B2Context(webRequest);

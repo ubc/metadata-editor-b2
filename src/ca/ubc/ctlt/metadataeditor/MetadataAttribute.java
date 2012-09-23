@@ -1,6 +1,6 @@
 package ca.ubc.ctlt.metadataeditor;
 
-public class CopyrightAttribute {
+public class MetadataAttribute {
 	private String label;
 	private String id;
 	private String value;

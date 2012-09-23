@@ -21,6 +21,7 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import blackboard.cms.filesystem.CSContext;
 import blackboard.cms.filesystem.CSEntry;
 import blackboard.cms.filesystem.CSEntryMetadata;
+import blackboard.cms.filesystem.CSFileSystemException;
 import blackboard.cms.metadata.CSFormManagerFactory;
 import blackboard.data.ReceiptOptions;
 import blackboard.persist.Id;
@@ -35,9 +36,9 @@ import com.spvsoftwareproducts.blackboard.utils.B2Context;
 import com.xythos.common.api.XythosException;
 
 @Controller
-@RequestMapping("/copyright")
-public class CopyrightController {
-
+@RequestMapping("/metadata")
+public class MedadataController {
+	
     public static class MetaDataChangeSelectQuery extends SelectQuery
     {
     	private B2Context b2context;
@@ -75,10 +76,10 @@ public class CopyrightController {
 			}
         	
         	// load attributes and count them for select statement
-        	List<CopyrightAttribute> attributes = MetadataUtil.getCopyrightAtttributes(b2context.getSetting(MetadataUtil.FORM_ID));
+        	List<MetadataAttribute> attributes = MetadataUtil.getMetadataAtttributes(b2context.getSetting(MetadataUtil.FORM_ID));
         	StringBuilder nameClause = new StringBuilder();
         	delim = "";
-			for (CopyrightAttribute attribute : attributes) {
+			for (MetadataAttribute attribute : attributes) {
 				nameClause.append(delim).append('?');
 				delim = ",";
 			}
@@ -94,12 +95,12 @@ public class CopyrightController {
             		sql.append("WHERE name IN (" + nameClause.toString() + ")  AND xythos_id IN (" + fileClause.toString() + ")");
             	sql.append(") GROUP BY location, MAX_TIMESTAMP");
             sql.append(") AND c.users_pk1 = u.pk1");
-            System.out.println(sql);
+            //System.out.println(sql);
             
             // fill in the variables
             PreparedStatement stmt = con.prepareStatement(sql.toString());
             int index = 1;
-        	for (CopyrightAttribute attribute : attributes) {
+        	for (MetadataAttribute attribute : attributes) {
         		stmt.setString(index, attribute.getId());
         		index++;
         	}
@@ -117,10 +118,10 @@ public class CopyrightController {
     }
     
 	@RequestMapping(value="/list")
-	public String list(HttpServletRequest webRequest, @RequestHeader(value = "referer", required = false) String referer, ModelMap model) {
+	public String list(HttpServletRequest webRequest, @RequestHeader(value = "referer", required = false) String referer, ModelMap model) throws Exception {
 		List<FileWrapper> files = new ArrayList<FileWrapper>();
 		List<String> fileSet = new ArrayList<String>();
-		B2Context b2context = new B2Context(webRequest);
+		B2Context b2Context = new B2Context(webRequest);
 		CSContext ctxCS = null;
 		String canSelectAll = "true";
 		ReceiptOptions ro = new ReceiptOptions();
@@ -175,17 +176,17 @@ public class CopyrightController {
 				canSelectAll = "false";
 				ro.addWarningMessage("You have selected more than 1000 files. The system can only process at most 1000 files at a time. Please select fewer files in the list.");
 			}
-		} catch (Exception e) {
-			LogServiceFactory.getInstance().logError("Exception occured while reading files ", e);
-			ro.addErrorMessage("Something went wrong when reading path. "+e.getMessage(), e);
+		} catch (CSFileSystemException e) {
 			ctxCS.rollback();
+			LogServiceFactory.getInstance().logError("Exception occured while reading files ", e);
+			throw new RuntimeException("Something went wrong when reading files.", e);
 		} finally {
 			if (ctxCS != null) {
 				try {
 					ctxCS.commit();
 				} catch (XythosException e) {
 					LogServiceFactory.getInstance().logError("Exception occured while commiting csContext.", e);
-					ro.addErrorMessage("Something went wrong. Please contact administrator. "+e.getMessage(), e);
+					throw new RuntimeException("Something went wrong. Please contact administrator. ", e);
 				}
 			}
 		}		
@@ -194,30 +195,23 @@ public class CopyrightController {
 		// load the metadata changes (e.g. last modified) from database
 		if (0 != files.size()) {
 			try {
-				MetaDataChangeSelectQuery query = new MetaDataChangeSelectQuery(b2context, files);
+				MetaDataChangeSelectQuery query = new MetaDataChangeSelectQuery(b2Context, files);
 				PersistenceServiceFactory.getInstance().getDbPersistenceManager().runDbQuery(query);
 			} catch (PersistenceException e) {
 				LogServiceFactory.getInstance().logError("Exception occured while reading metadata.", e);
-				ro.addErrorMessage("Something went wrong. Please contact administrator. "+e.getMessage(), e);
+				throw new RuntimeException("Something went wrong. Please contact administrator. ", e);
 			}
 		}
 		
 		InlineReceiptUtil.addReceiptToRequest(webRequest, ro);
 		
-		List<CopyrightAttribute> attributes = MetadataUtil.getCopyrightAtttributes(b2context.getSetting(MetadataUtil.FORM_ID));
+		List<MetadataAttribute> attributes = MetadataUtil.getMetadataAtttributes(b2Context.getSetting(MetadataUtil.FORM_ID));
 		model.addAttribute("attributes", attributes);
 		model.addAttribute("files", files);
 		model.addAttribute("fileSet", fileSet);
 		model.addAttribute("canSelectAll", canSelectAll);
-		try {
-			model.addAttribute("form", MetadataUtil.getFormBodyByFormId(b2context.getSetting(MetadataUtil.FORM_ID)));
-		} catch (PersistenceException e) {
-			LogServiceFactory.getInstance().logError("Exception occured while loading the form: Please contact administrator to setup correct form.", e);
-			ro.addErrorMessage("Invalid form. Please contact administrator to setup correct form. "+e.getMessage(), e);
-		} catch (Exception e) {
-			LogServiceFactory.getInstance().logError("Exception occured while generating form body.", e);
-			ro.addErrorMessage("Invalid form body. Please contact administrator to setup correct form. "+e.getMessage(), e);
-		}
+		model.addAttribute("formWrapper", new FormWrapper(b2Context.getSetting(MetadataUtil.FORM_ID)));
+
 		return "list";
 	}
 	
@@ -237,12 +231,12 @@ public class CopyrightController {
 			key = "bb_" + form.getIntegrationKey().replace( "-", "" ) + "_";
 		} catch (PersistenceException e) {
 			LogServiceFactory.getInstance().logError("Exception occured while loading the form: Please contact administrator to setup correct form.", e);
-			ro.addErrorMessage("Invalid form. Please contact administrator to setup correct form. "+e.getMessage(), e);
+			throw new RuntimeException("Invalid form. Please contact administrator to setup correct form. ", e);
 		}
 
 		// load the values submitted
-		List<CopyrightAttribute> attributes = MetadataUtil.getCopyrightAtttributes(b2context.getSetting(MetadataUtil.FORM_ID));
-		for (CopyrightAttribute attribute : attributes) { 
+		List<MetadataAttribute> attributes = MetadataUtil.getMetadataAtttributes(b2context.getSetting(MetadataUtil.FORM_ID));
+		for (MetadataAttribute attribute : attributes) { 
 			String value = webRequest.getParameter(key + attribute.getId());
 			if ("Boolean".equals(attribute.getType())) {
 				attribute.setValue(value==null?"N":"Y");
@@ -261,24 +255,24 @@ public class CopyrightController {
 
 				CSEntryMetadata metadata = entry.getCSEntryMetadata();
 
-				for (CopyrightAttribute attribute : attributes) { 
+				for (MetadataAttribute attribute : attributes) { 
 					metadata.setStandardProperty(attribute.getId(), attribute.getValue());
 //				String xythosIdStr = entry.getFileSystemEntry().getEntryID();
 //				System.out.println("xythosIdStr: "+xythosIdStr);
 				}
 			}
-			ro.addSuccessMessage("Copyright status are saved!");
-		} catch (Exception e) {
+			ro.addSuccessMessage("The change has been saved successfully!");
+		} catch (CSFileSystemException e) {
 			ctxCS.rollback();
 			LogServiceFactory.getInstance().logError("Exception occured while saving the metadata.", e);
-			ro.addErrorMessage("Failed to save metadata. Please contact administrator. "+e.getMessage(), e);
+			throw new RuntimeException("Failed to save metadata. Please contact administrator. ", e);
 		} finally {
 			if (ctxCS != null) {
 				try {
 					ctxCS.commit();
 				} catch (XythosException e) {
 					LogServiceFactory.getInstance().logError("Exception occured while commiting csContext.", e);
-					ro.addErrorMessage("Something went wrong. Please contact administrator. "+e.getMessage(), e);
+					throw new RuntimeException("Something went wrong. Please contact administrator. ", e);
 				}
 			}
 		}

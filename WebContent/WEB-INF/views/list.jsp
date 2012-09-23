@@ -1,12 +1,14 @@
 <%@ page language="java" contentType="text/html; charset=ISO-8859-1"
 	pageEncoding="ISO-8859-1"
+	errorPage="error.jsp"
 	import="blackboard.persist.*,
 	blackboard.platform.*,blackboard.cms.xythos.*,
 	blackboard.cms.filesystem.*,blackboard.cms.metadata.*,
 	blackboard.cms.metadata.MetadataManagerFactory,
 	blackboard.cms.xythos.impl.BlackboardFileMetaData,
 	blackboard.platform.contentsystem.manager.*,
-	blackboard.platform.contentsystem.service.*,java.io.*,java.util.*,
+	blackboard.platform.contentsystem.service.*,
+	java.io.*,java.util.*,
 	ca.ubc.ctlt.metadataeditor.*,
 	blackboard.platform.forms.Form,
 	com.spvsoftwareproducts.blackboard.utils.B2Context
@@ -15,18 +17,18 @@
 <%@ taglib uri="/bbUI" prefix="bbUI"%>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core"%>
 <%
-	B2Context b2context = new B2Context(request);
+B2Context b2Context = new B2Context(request);
 %>
 
 <bbUI:inlineReceipt />
 
-<bbNG:learningSystemPage title="Editing Copyright Status" ctxId="ctx">
+<bbNG:learningSystemPage title="Editing ${formWrapper.title}" ctxId="ctx">
 
-	<bbNG:pageHeader instructions="Use of Connect must comply with the Canadian Copyright Act. Permission from the copyright holder is required to upload and post content from copyrighted works into Connect. Please see <a href='http://copyright.ubc.ca' target='_blank'>http://copyright.ubc.ca</a> for Copyright Guidelines for UBC Faculty, Staff and Students. <br /><br />Please select the appropriate copyright status for each file below.">
+	<bbNG:pageHeader instructions="${formWrapper.instructions}">
 		<bbNG:breadcrumbBar>
-			<bbNG:breadcrumb>Copyright</bbNG:breadcrumb>
+			<bbNG:breadcrumb>${formWrapper.title}</bbNG:breadcrumb>
 		</bbNG:breadcrumbBar>
-		<bbNG:pageTitleBar>Editing Copyright Status</bbNG:pageTitleBar>
+		<bbNG:pageTitleBar>Editing ${formWrapper.title}</bbNG:pageTitleBar>
 
 	</bbNG:pageHeader>
 
@@ -39,9 +41,9 @@
 					<bbNG:listElement label="File" name="file" isRowHeader="true"><a href="/bbcswebdav${file.filePath}" target="_blank">${file.filePath}</a></bbNG:listElement>
 					<c:forEach items="${attributes}" varStatus="status" var="attribute">
 						<c:if test="${attribute.type == 'Boolean'}">
-							<jsp:useBean id="attribute" type="ca.ubc.ctlt.metadataeditor.CopyrightAttribute" />
+							<jsp:useBean id="attribute" type="ca.ubc.ctlt.metadataeditor.MetadataAttribute" />
 							<bbNG:listElement label="${attribute.label}" name="${attribute.id}" isRowHeader="false">
-								<%="true".equals(file.getMetaValue(b2context.getSetting(MetadataUtil.FORM_ID)).get(attribute.getId()))?"Y":""%>
+								<%="true".equals(file.getMetaValue(b2Context.getSetting(MetadataUtil.FORM_ID)).get(attribute.getId()))?"Y":""%>
 							</bbNG:listElement>
 						</c:if>
 					</c:forEach>
@@ -49,11 +51,11 @@
 					<bbNG:listElement label="Last Modified On" name="lastModifiedOn" isRowHeader="false">${file.lastModifed}</bbNG:listElement>
 				</bbNG:inventoryList>
 			</bbNG:step>
-			<bbNG:step title="Copyright permission to apply to the selected files">
+			<bbNG:step title="${formWrapper.title} to apply to the selected files">
 				<bbNG:collapsibleList id="md" isDynamic="false">
-			        <bbNG:collapsibleListItem id="1" title="${form.pageHeader}" expandOnPageLoad="true">
+			        <bbNG:collapsibleListItem id="1" title="${formWrapper.pageHeader}" expandOnPageLoad="true">
 					<ul>
-						<bbUI:formBody formBody="${form}" name="copyright" hideStepLabel="true"/>
+						<bbUI:formBody formBody="${formWrapper.formBody}" name="metadata" hideStepLabel="true"/>
 					</ul>
      				</bbNG:collapsibleListItem>
 
