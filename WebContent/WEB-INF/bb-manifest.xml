@@ -2,9 +2,10 @@
 <manifest>
 	<!-- core extension information -->
 	<plugin>
-		<name value="Metadata Editor" />
+		<name value="plugin.name" />
 		<handle value="metadata" />
-		<description value="Metadata Editor" />
+		<description value="plugin.description" />
+		<default-locale value="en_US"/>
 		<version value="1.0.0" />
 		<requires>
 			<bbversion value="9.0" />
@@ -23,9 +24,9 @@
 		<!-- <http-actions> <config value="admin/configure.jsp"/> <remove value="admin/remove.jsp"/> 
 			</http-actions> -->
 		<application-defs>
-			<application handle="Metadata Editor" type="system"
-				use-ssl="false" name="CopyrightEditor" can-allow-guest="false">
-				<description lang="en_US">For bulk editing metadata.</description>
+			<application handle="MetadataEditor" type="system"
+				use-ssl="false" name="plugin.application.name" can-allow-guest="false">
+				<description lang="en_US">plugin.application.description</description>
 				<links>
 					<!-- <link>
 						<type value="cs_tool" />
@@ -35,21 +36,21 @@
 					</link> -->
 					<link>
 						<type value="cs_modify_file" />
-						<name value="Edit Copyright Status" />
+						<name value="plugin.application.cs_modify_file.name" />
 						<url value="/metadata/list" />
-						<description value="For bulk editing metadata modify file" />
+						<description value="plugin.application.cs_modify_file.description" />
 					</link>
 					<link>
 						<type value="cs_action" />
-						<name value="Edit Copyright Status" />
+						<name value="plugin.application.cs_action.name" />
 						<url value="/metadata/list" />
-						<description value="Set Metadata for multiple files" />
+						<description value="plugin.application.cs_action.description" />
 					</link>
 					<link>
 						<type value="cs_modify_folder" />
-						<name value="Edit Copyright Status" />
+						<name value="plugin.application.cs_modify_folder.name" />
 						<url value="/metadata/list" />
-						<description value="Set Metadata for file/folder" />
+						<description value="plugin.application.cs_modify_folder.description" />
 					</link>
 				</links>
 			</application>

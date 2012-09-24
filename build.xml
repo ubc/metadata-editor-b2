@@ -2,15 +2,41 @@
 <project name="ubc-metadata Building Block" default="deploy" basedir=".">
 	<description>Metadata Manager</description>
 
-	<property name="build.dir" value="${basedir}/build/"/>
+	<property name="build.dir" value="${basedir}/bin/"/>
+	<property name="src" value="${basedir}/src/"/>
 	<property name="b2.package.name" value="${basedir}/ubc-metadata"/>
+
+    <path id="classpath.base">
+        <fileset dir="lib/">
+            <include name="**/*.jar"/>
+        </fileset>
+        <fileset dir="${bbsdk}">
+            <include name="**/*.jar"/>
+        </fileset>
+    </path>
+
+    <target name="init">
+        <!-- Create the time stamp -->
+        <tstamp/>
+        <!-- Create the build directory structure used by compile -->
+        <mkdir dir="${build.dir}"/>
+    </target>
+
+    <target name="compile" depends="init">
+        <javac srcdir="${src}" destdir="${build.dir}" debug="true" includes="**/*.java" includeantruntime="false">
+            <classpath refid="classpath.base"/>
+        </javac>
+        <copy todir="${build.dir}">
+            <fileset dir="src" excludes="**/*.java" />
+        </copy>
+    </target>
 
 	<target name="deploy" depends="package-war">
 		<taskdef name="b2deploy" classpath="${basedir}/lib/b2deploy-task.jar" classname="org.oscelot.ant.B2DeployTask" />
 		<b2deploy localfilepath="${b2.package.name}.war" host="192.168.56.101" courseorgavailable="true" clean="true" />
 	</target>
 
-	<target name="package-war">
+	<target name="package-war" depends="compile">
 		<war destfile="${b2.package.name}.war" basedir="webContent">
 			<classes dir="bin"></classes>
 		</war>

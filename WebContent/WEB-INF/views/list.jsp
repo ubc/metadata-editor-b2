@@ -16,27 +16,34 @@
 <%@ taglib prefix="bbNG" uri="/bbNG"%>
 <%@ taglib uri="/bbUI" prefix="bbUI"%>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core"%>
+<%@ taglib uri="http://www.springframework.org/tags" prefix="spring"%>
 <%
 B2Context b2Context = new B2Context(request);
 %>
+<spring:message var="page_title" code="title.editing" arguments="${formWrapper.title}"/>
+<spring:message var="verify_file" code="label.verify_file" />
+<spring:message var="list_selected_files" code="message.list_selected_files" />
+<spring:message var="last_modified_by" code="label.last_modified_by" />
+<spring:message var="last_modified_at" code="label.last_modified_at" />
+<spring:message var="apply_to_files" code="label.apply_to_files" arguments="${formWrapper.title}"/>
 
 <bbUI:inlineReceipt />
 
-<bbNG:learningSystemPage title="Editing ${formWrapper.title}" ctxId="ctx">
+<bbNG:learningSystemPage title="${page_title}" ctxId="ctx">
 
 	<bbNG:pageHeader instructions="${formWrapper.instructions}">
 		<bbNG:breadcrumbBar>
 			<bbNG:breadcrumb>${formWrapper.title}</bbNG:breadcrumb>
 		</bbNG:breadcrumbBar>
-		<bbNG:pageTitleBar>Editing ${formWrapper.title}</bbNG:pageTitleBar>
+		<bbNG:pageTitleBar>${page_title}</bbNG:pageTitleBar>
 
 	</bbNG:pageHeader>
 
 	<bbNG:form action="save" method="post">
 		<bbNG:dataCollection>
-			<bbNG:step title="Verify selected files">
+			<bbNG:step title="${verify_file}">
 				<bbNG:inventoryList collection="${files}" objectVar="file" 
-					className="FileWrapper" description="List of selected files." enableSelectEntireList="${canSelectAll}" >
+					className="FileWrapper" description="${list_selected_files}" enableSelectEntireList="${canSelectAll}" >
 					<bbNG:listCheckboxElement name="fileSelected" value="${file.filePath}" />
 					<bbNG:listElement label="File" name="file" isRowHeader="true"><a href="/bbcswebdav${file.filePath}" target="_blank">${file.filePath}</a></bbNG:listElement>
 					<c:forEach items="${attributes}" varStatus="status" var="attribute">
@@ -47,11 +54,11 @@ B2Context b2Context = new B2Context(request);
 							</bbNG:listElement>
 						</c:if>
 					</c:forEach>
-					<bbNG:listElement label="Last Modified By" name="lastModifiedBy" isRowHeader="false">${file.lastModifedUser}</bbNG:listElement>
-					<bbNG:listElement label="Last Modified On" name="lastModifiedOn" isRowHeader="false">${file.lastModifed}</bbNG:listElement>
+					<bbNG:listElement label="${last_modified_by}" name="lastModifiedBy" isRowHeader="false">${file.lastModifedUser}</bbNG:listElement>
+					<bbNG:listElement label="${last_modified_at}" name="lastModifiedOn" isRowHeader="false">${file.lastModifed}</bbNG:listElement>
 				</bbNG:inventoryList>
 			</bbNG:step>
-			<bbNG:step title="${formWrapper.title} to apply to the selected files">
+			<bbNG:step title="${apply_to_files}">
 				<bbNG:collapsibleList id="md" isDynamic="false">
 			        <bbNG:collapsibleListItem id="1" title="${formWrapper.pageHeader}" expandOnPageLoad="true">
 					<ul>

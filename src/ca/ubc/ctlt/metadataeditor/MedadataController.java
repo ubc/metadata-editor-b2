@@ -7,10 +7,13 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 import javax.servlet.http.HttpServletRequest;
 
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.MessageSource;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.ModelMap;
 import org.springframework.web.bind.annotation.RequestHeader;
@@ -38,6 +41,9 @@ import com.xythos.common.api.XythosException;
 @Controller
 @RequestMapping("/metadata")
 public class MedadataController {
+	
+	@Autowired
+    private MessageSource messageSource;
 	
     public static class MetaDataChangeSelectQuery extends SelectQuery
     {
@@ -118,7 +124,7 @@ public class MedadataController {
     }
     
 	@RequestMapping(value="/list")
-	public String list(HttpServletRequest webRequest, @RequestHeader(value = "referer", required = false) String referer, ModelMap model) throws Exception {
+	public String list(HttpServletRequest webRequest, @RequestHeader(value = "referer", required = false) String referer, ModelMap model, Locale locale) throws Exception {
 		List<FileWrapper> files = new ArrayList<FileWrapper>();
 		List<String> fileSet = new ArrayList<String>();
 		B2Context b2Context = new B2Context(webRequest);
@@ -174,19 +180,19 @@ public class MedadataController {
 			}
 			if (files.size() > 1000) {
 				canSelectAll = "false";
-				ro.addWarningMessage("You have selected more than 1000 files. The system can only process at most 1000 files at a time. Please select fewer files in the list.");
+				ro.addWarningMessage(messageSource.getMessage("message.too_many_files", null, locale));
 			}
 		} catch (CSFileSystemException e) {
 			ctxCS.rollback();
 			LogServiceFactory.getInstance().logError("Exception occured while reading files ", e);
-			throw new RuntimeException("Something went wrong when reading files.", e);
+			throw new RuntimeException(messageSource.getMessage("message.error_reading_files", null, locale), e);
 		} finally {
 			if (ctxCS != null) {
 				try {
 					ctxCS.commit();
 				} catch (XythosException e) {
 					LogServiceFactory.getInstance().logError("Exception occured while commiting csContext.", e);
-					throw new RuntimeException("Something went wrong. Please contact administrator. ", e);
+					throw new RuntimeException(messageSource.getMessage("message.contact_admin", null, locale), e);
 				}
 			}
 		}		
@@ -199,7 +205,7 @@ public class MedadataController {
 				PersistenceServiceFactory.getInstance().getDbPersistenceManager().runDbQuery(query);
 			} catch (PersistenceException e) {
 				LogServiceFactory.getInstance().logError("Exception occured while reading metadata.", e);
-				throw new RuntimeException("Something went wrong. Please contact administrator. ", e);
+				throw new RuntimeException(messageSource.getMessage("message.contact_admin", null, locale), e);
 			}
 		}
 		
@@ -217,7 +223,7 @@ public class MedadataController {
 	
 	
 	@RequestMapping(value="/save", method = RequestMethod.POST)
-	public String save(HttpServletRequest webRequest, RedirectAttributes redirectAttributes) {
+	public String save(HttpServletRequest webRequest, RedirectAttributes redirectAttributes, Locale locale) {
 		String[] fileSelected = webRequest.getParameterValues("fileSelected");
 		String[] files = webRequest.getParameterValues("files");
 		B2Context b2context = new B2Context(webRequest);
@@ -231,7 +237,7 @@ public class MedadataController {
 			key = "bb_" + form.getIntegrationKey().replace( "-", "" ) + "_";
 		} catch (PersistenceException e) {
 			LogServiceFactory.getInstance().logError("Exception occured while loading the form: Please contact administrator to setup correct form.", e);
-			throw new RuntimeException("Invalid form. Please contact administrator to setup correct form. ", e);
+			throw new RuntimeException(messageSource.getMessage("message.invalid_form", null, locale), e);
 		}
 
 		// load the values submitted
@@ -261,18 +267,18 @@ public class MedadataController {
 //				System.out.println("xythosIdStr: "+xythosIdStr);
 				}
 			}
-			ro.addSuccessMessage("The change has been saved successfully!");
+			ro.addSuccessMessage(messageSource.getMessage("message.save_change_success", null, locale));
 		} catch (CSFileSystemException e) {
 			ctxCS.rollback();
 			LogServiceFactory.getInstance().logError("Exception occured while saving the metadata.", e);
-			throw new RuntimeException("Failed to save metadata. Please contact administrator. ", e);
+			throw new RuntimeException(messageSource.getMessage("message.failed_save_metadata", null, locale), e);
 		} finally {
 			if (ctxCS != null) {
 				try {
 					ctxCS.commit();
 				} catch (XythosException e) {
 					LogServiceFactory.getInstance().logError("Exception occured while commiting csContext.", e);
-					throw new RuntimeException("Something went wrong. Please contact administrator. ", e);
+					throw new RuntimeException(messageSource.getMessage("message.contact_admin", null, locale), e);
 				}
 			}
 		}
