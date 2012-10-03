@@ -55,7 +55,7 @@ public class MetadataUtil {
 		return attributes;
 	}
 	
-	public static Map<String, String> getMetadata(String formIdString, String filepath) {
+	public static Map<String, Object> getMetadata(String formIdString, String filepath) {
 		
 		// load all attribute IDs
 		if (attributes == null || attributes.isEmpty()) {
@@ -63,7 +63,7 @@ public class MetadataUtil {
 		}
 		
 		CSContext ctxCS = null;
-		Map<String, String> ret = new HashMap<String, String>();
+		Map<String, Object> ret = new HashMap<String, Object>();
 		try {
 			ctxCS = CSContext.getContext();
 			CSEntry entry = ctxCS.findEntry(filepath);
@@ -71,19 +71,19 @@ public class MetadataUtil {
 			XythosMetadata mdObj = MetadataManagerFactory.getInstance().load(entry.getFileSystemEntry());
 			BbAttributes bbAttributes = mdObj.getBbAttributes();
 			for (MetadataAttribute attribute : attributes) {
-				//System.out.println(attribute.getType());
+				// BbAttributes.getXXX() may return null.
 				if ("Boolean".equals(attribute.getType())) {
-					ret.put(attribute.getId(), bbAttributes.getBoolean(attribute.getId()).toString());
+					ret.put(attribute.getId(), bbAttributes.getBoolean(attribute.getId()));
 				} else if ("Short String".equals(attribute.getType())||"String".equals(attribute.getType())||"Long String".equals(attribute.getType()) || "Unlimited String".equals(attribute.getType())) {
 					ret.put(attribute.getId(), bbAttributes.getString(attribute.getId()));
 				} else if ("Integer".equals(attribute.getType())) {
-					ret.put(attribute.getId(), Integer.toString(bbAttributes.getInteger(attribute.getId())));
+					ret.put(attribute.getId(), bbAttributes.getInteger(attribute.getId()));
 				} else if ("Long".equals(attribute.getType())) {
-					ret.put(attribute.getId(), Long.toString(bbAttributes.getLong(attribute.getId())));
+					ret.put(attribute.getId(), bbAttributes.getLong(attribute.getId()));
 				} else if ("Double".equals(attribute.getType())) {
-					ret.put(attribute.getId(), Double.toString(bbAttributes.getDouble(attribute.getId())));
+					ret.put(attribute.getId(), bbAttributes.getDouble(attribute.getId()));
 				} else if ("Float".equals(attribute.getType())) {
-					ret.put(attribute.getId(), Float.toString(bbAttributes.getFloat(attribute.getId())));
+					ret.put(attribute.getId(), bbAttributes.getFloat(attribute.getId()));
 				} else {
 					throw new RuntimeException("Unsupported attribute type: " + attribute.getType());
 				}
@@ -97,7 +97,7 @@ public class MetadataUtil {
 				try {
 					ctxCS.commit();
 				} catch (XythosException e) {
-					throw new RuntimeException(e);
+					throw new RuntimeException("CSContext committing failed!", e);
 				}
 			}
 		}

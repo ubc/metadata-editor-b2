@@ -14,7 +14,7 @@
     </bbNG:breadcrumbBar>
     <bbNG:pageTitleBar showTitleBar="true" title="Metadata Settings"/>
   </bbNG:pageHeader>
-  <bbNG:form action="" id="id_simpleForm" name="simpleForm" method="post" onsubmit="return validateForm();">
+  <bbNG:form action="save" id="id_simpleForm" name="simpleForm" method="post" onsubmit="return validateForm();">
   <bbNG:dataCollection markUnsavedChanges="true" showSubmitButtons="true">
     <bbNG:step hideNumber="false" id="stepOne" title="Select a template" instructions="">
       <bbNG:dataElement isRequired="true" label="Metadata Template">

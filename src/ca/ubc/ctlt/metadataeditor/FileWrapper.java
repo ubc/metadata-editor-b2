@@ -28,7 +28,7 @@ public class FileWrapper {
 		return mFileEntry.getFileSystemEntry().getEntryID();
 	}
 
-	public Map<String, String> getMetaValue(String formIdString) {
+	public Map<String, Object> getMetaValue(String formIdString) {
 		return MetadataUtil.getMetadata(formIdString, mFileEntry.getFullPath());
 	}
 
