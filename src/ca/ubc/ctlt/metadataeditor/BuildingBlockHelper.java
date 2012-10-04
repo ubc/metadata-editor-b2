@@ -4,7 +4,12 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.util.Properties;
+
+import javax.servlet.http.Cookie;
+import javax.servlet.http.HttpServletRequest;
 
 import blackboard.platform.plugin.PlugInException;
 import blackboard.platform.plugin.PlugInUtil;
@@ -74,4 +79,25 @@ public class BuildingBlockHelper {
 		props.store(new FileOutputStream(settingsFile), "Building Block Properties File");;
 	}
 	
+	
+	public static String displayErrorForWeb(Throwable t) {
+		StringWriter sw = new StringWriter();
+		PrintWriter pw = new PrintWriter(sw);
+		t.printStackTrace(pw);
+		String stackTrace = sw.toString();
+		return "<pre>"+stackTrace+"</pre>";
+	}
+	
+	public static String dumpCookies(HttpServletRequest request) {
+		StringBuilder cookieStr = new StringBuilder("<pre>");
+		Cookie[] cookies = request.getCookies();
+		if (cookies != null) {
+			for (int i = 0; i < cookies.length; i++) {
+				cookieStr.append(cookies[i].getName());
+				cookieStr.append("=["+ cookies[i].getValue() + "]\n");
+			}
+		}
+		cookieStr.append("</pre>");
+		return cookieStr.toString();
+	}
 }

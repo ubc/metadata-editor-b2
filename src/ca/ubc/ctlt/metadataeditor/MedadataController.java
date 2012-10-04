@@ -130,11 +130,11 @@ public class MedadataController {
 		B2Context b2Context = new B2Context(webRequest);
 		CSContext ctxCS = null;
 		String canSelectAll = "true";
-		ReceiptOptions ro = new ReceiptOptions();
+		ReceiptOptions ro = InlineReceiptUtil.getReceiptFromRequest(webRequest);
 		int startIndex = (webRequest.getParameter("startIndex") == null) ? 0 : Integer.parseInt((webRequest.getParameter("startIndex")));
 		int numResults = (webRequest.getParameter("numResults") == null) ? 25 : Integer.parseInt((webRequest.getParameter("numResults")));
 		
-		// TODO need to figure out a way to set the default rows in the list
+		// TODO need to figure out a way to set the default # of rows showing in the list
 //		HttpSession session = webRequest.getSession();
 //		//session.setAttribute("fileFileWrapperlistContainernumResults", "100");
 //		Enumeration keys = session.getAttributeNames();
@@ -209,6 +209,7 @@ public class MedadataController {
 			}
 		}
 		
+		
 		InlineReceiptUtil.addReceiptToRequest(webRequest, ro);
 		
 		List<MetadataAttribute> attributes = MetadataUtil.getMetadataAtttributes(b2Context.getSetting(MetadataUtil.FORM_ID));
@@ -262,7 +263,7 @@ public class MedadataController {
 				CSEntryMetadata metadata = entry.getCSEntryMetadata();
 
 				for (MetadataAttribute attribute : attributes) { 
-					metadata.setStandardProperty(attribute.getId(), attribute.getValue());
+					metadata.setStandardProperty(attribute.getId(), (attribute.getValue() == null ? "" : attribute.getValue()));
 //				String xythosIdStr = entry.getFileSystemEntry().getEntryID();
 //				System.out.println("xythosIdStr: "+xythosIdStr);
 				}

@@ -3,12 +3,13 @@
 <%@ page isErrorPage="true" %>
 <%@ page import="org.slf4j.Logger" %>
 <%@ page import="org.slf4j.LoggerFactory" %>
+<%@ page import="ca.ubc.ctlt.metadataeditor.BuildingBlockHelper" %>
 
 <%@ taglib prefix="bbNG" uri="/bbNG"%>
 <%@ taglib uri="/bbUI" prefix="bbUI"%>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core"%>
 <%
-	final Logger log = LoggerFactory.getLogger("com.nestorurquiza.web.internal-error");
+	final Logger log = LoggerFactory.getLogger("ca.ubc.ctlt.metadataeditor.internal-error");
 	log.error("Internal Server Error", exception);
 %>
 
@@ -36,10 +37,10 @@
 				if (rootCause == null)
 					rootCause = sex;
 				out.println("** Root cause is: " + rootCause.getMessage());
-				rootCause.printStackTrace(new java.io.PrintWriter(out));
+				out.println(BuildingBlockHelper.displayErrorForWeb(rootCause));
 			} else {
 				// It's not a ServletException, so we'll just show it
-				exception.printStackTrace(new java.io.PrintWriter(out));
+				out.println(BuildingBlockHelper.displayErrorForWeb(exception));
 			}
 		} else {
 			out.println("No error information available");
@@ -47,16 +48,10 @@
 
 		// Display cookies
 		out.println("<br />Cookies:<br />");
-		Cookie[] cookies = request.getCookies();
-		if (cookies != null) {
-			for (int i = 0; i < cookies.length; i++) {
-				out.println(cookies[i].getName() + "=["
-						+ cookies[i].getValue() + "]");
-			}
-		}
+		out.println(BuildingBlockHelper.dumpCookies(request));
 
 	} catch (Exception ex) {
-		ex.printStackTrace(new java.io.PrintWriter(out));
+		out.println(BuildingBlockHelper.displayErrorForWeb(ex));
 	}
 %>
 </ul>

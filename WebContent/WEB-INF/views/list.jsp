@@ -27,8 +27,6 @@ B2Context b2Context = new B2Context(request);
 <spring:message var="last_modified_at" code="label.last_modified_at" />
 <spring:message var="apply_to_files" code="label.apply_to_files" arguments="${formWrapper.title}"/>
 
-<bbUI:inlineReceipt />
-
 <bbNG:learningSystemPage title="${page_title}" ctxId="ctx">
 
 	<bbNG:pageHeader instructions="${formWrapper.instructions}">
@@ -50,7 +48,7 @@ B2Context b2Context = new B2Context(request);
 						<c:if test="${attribute.type == 'Boolean'}">
 							<jsp:useBean id="attribute" type="ca.ubc.ctlt.metadataeditor.MetadataAttribute" />
 							<bbNG:listElement label="${attribute.label}" name="${attribute.id}" isRowHeader="false">
-								<%="true".equals(file.getMetaValue(b2Context.getSetting(MetadataUtil.FORM_ID)).get(attribute.getId()))?"Y":""%>
+								<%=Boolean.TRUE.equals(file.getMetaValue(b2Context.getSetting(MetadataUtil.FORM_ID)).get(attribute.getId()))?"Y":""%>
 							</bbNG:listElement>
 						</c:if>
 					</c:forEach>
