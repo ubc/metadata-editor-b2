@@ -2,13 +2,13 @@
 <manifest>
 	<!-- core extension information -->
 	<plugin>
-		<name value="plugin.name" />
+		<name value="metadataeditor" />
 		<handle value="metadata" />
-		<description value="plugin.description" />
+		<description value="Metadata Editor" />
 		<default-locale value="en_US"/>
-		<version value="1.0.0" />
+		<version value="1.0.1" />
 		<requires>
-			<bbversion value="9.0" />
+			<bbversion value="9.1" />
 		</requires>
 		<vendor>
 			<id value="ubc" />
