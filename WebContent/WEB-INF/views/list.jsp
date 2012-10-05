@@ -19,6 +19,7 @@
 <%@ taglib uri="http://www.springframework.org/tags" prefix="spring"%>
 <%
 B2Context b2Context = new B2Context(request);
+pageContext.setAttribute("version", BuildingBlockHelper.getVersion());
 %>
 <spring:message var="page_title" code="title.editing" arguments="${formWrapper.title}"/>
 <spring:message var="verify_file" code="label.verify_file" />
@@ -34,8 +35,34 @@ B2Context b2Context = new B2Context(request);
 			<bbNG:breadcrumb>${formWrapper.title}</bbNG:breadcrumb>
 		</bbNG:breadcrumbBar>
 		<bbNG:pageTitleBar>${page_title}</bbNG:pageTitleBar>
-
 	</bbNG:pageHeader>
+
+<style type="text/css">
+#tinyfootnote
+{
+	margin-top: 5em;
+	font-size: 0.7em;
+	text-align: center;
+	color: #aaa;
+}
+#tinyfootnote a:link, #tinyfootnote a:visited
+{
+	color: #888;
+}
+</style>
+<!--[if (lt IE 9)]>
+<style type="text/css">
+/* IE8 CSS hacks */
+select, .ie8hacks
+{
+	margin-left: 3em;
+}
+select
+{
+	margin-bottom: 3em;
+}
+</style>
+<![endif]-->
 
 	<bbNG:form action="save" method="post">
 		<bbNG:dataCollection>
@@ -90,4 +117,7 @@ B2Context b2Context = new B2Context(request);
 		$('listContainer_selectAll').checked = true;
 	</script>
 	</bbNG:jsBlock>
+	
+	<p id="tinyfootnote">Version: ${version}<br />Open source project, available on <a href="https://github.com/ubc/metadata-editor-b2" target="_blank">Github</a></p>
+	
 </bbNG:learningSystemPage>

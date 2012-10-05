@@ -130,11 +130,12 @@ public class MedadataController {
 		B2Context b2Context = new B2Context(webRequest);
 		CSContext ctxCS = null;
 		String canSelectAll = "true";
+		// Don't create a new object. Otherwise, it will overide the message passed from another action
 		ReceiptOptions ro = InlineReceiptUtil.getReceiptFromRequest(webRequest);
 		int startIndex = (webRequest.getParameter("startIndex") == null) ? 0 : Integer.parseInt((webRequest.getParameter("startIndex")));
 		int numResults = (webRequest.getParameter("numResults") == null) ? 25 : Integer.parseInt((webRequest.getParameter("numResults")));
 		
-		// TODO need to figure out a way to set the default # of rows showing in the list
+		//TODO: need to figure out a way to set the default # of rows showing in the list
 //		HttpSession session = webRequest.getSession();
 //		//session.setAttribute("fileFileWrapperlistContainernumResults", "100");
 //		Enumeration keys = session.getAttributeNames();

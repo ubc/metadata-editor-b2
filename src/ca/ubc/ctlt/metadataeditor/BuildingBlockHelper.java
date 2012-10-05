@@ -11,7 +11,10 @@ import java.util.Properties;
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 
+import blackboard.platform.plugin.PlugIn;
 import blackboard.platform.plugin.PlugInException;
+import blackboard.platform.plugin.PlugInManager;
+import blackboard.platform.plugin.PlugInManagerFactory;
 import blackboard.platform.plugin.PlugInUtil;
 
 /**
@@ -99,5 +102,14 @@ public class BuildingBlockHelper {
 		}
 		cookieStr.append("</pre>");
 		return cookieStr.toString();
+	}
+	
+	/** 
+	 * Get the building block version, defined in bb-manifest.xml
+	 */
+	public static String getVersion() {
+		PlugInManager manager = PlugInManagerFactory.getInstance();
+		PlugIn plugin = manager.getPlugIn(VENDOR_ID, HANDLE);
+		return plugin.getVersion().toString();
 	}
 }
