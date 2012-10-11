@@ -123,4 +123,19 @@ public class MetadataUtil {
 			}
 		}
 	}
+	
+	
+	public static void getFilesInPath(List<String> files, String entryString) {
+		CSContext ctxCS = CSContext.getContext();
+		CSEntry entry = ctxCS.findEntry(entryString);
+		if (entry instanceof CSFile) {
+			files.add(entryString);
+		} else if (entry instanceof CSDirectory) {
+			CSDirectory dir = (CSDirectory) entry;
+			List<CSEntry> contents = dir.getDirectoryContents();
+			for (CSEntry e : contents) {
+				MetadataUtil.getFilesInPath(files, e.getFullPath());
+			}
+		}
+	}
 }

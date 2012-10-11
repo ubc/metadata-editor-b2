@@ -6,6 +6,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -54,7 +55,8 @@ public class MedadataController {
     		this.b2context = b2context;
     		this.files = files;
     	}
-    	
+    	  
+    	@Override
 		protected void processRow(ResultSet rst) throws SQLException {
 			String location = rst.getString(3);
 			for (FileWrapper file : files) {
@@ -66,6 +68,7 @@ public class MedadataController {
 			}
 		}
 
+    	@Override
         protected Statement prepareStatement(Connection con)
             throws SQLException
         {
@@ -130,8 +133,11 @@ public class MedadataController {
 		B2Context b2Context = new B2Context(webRequest);
 		CSContext ctxCS = null;
 		String canSelectAll = "true";
-		// Don't create a new object. Otherwise, it will overide the message passed from another action
+		// Don't create a new object unless it's empty. Otherwise, it will override the message passed from another action
 		ReceiptOptions ro = InlineReceiptUtil.getReceiptFromRequest(webRequest);
+		if (null == ro) {
+			ro = new ReceiptOptions();
+		}
 		int startIndex = (webRequest.getParameter("startIndex") == null) ? 0 : Integer.parseInt((webRequest.getParameter("startIndex")));
 		int numResults = (webRequest.getParameter("numResults") == null) ? 25 : Integer.parseInt((webRequest.getParameter("numResults")));
 		
@@ -180,7 +186,7 @@ public class MedadataController {
 				MetadataUtil.getFilesInPathWithMetadata(files, entry, startIndex, numResults);
 			}
 			if (files.size() > 1000) {
-				canSelectAll = "false";
+				//canSelectAll = "false";
 				ro.addWarningMessage(messageSource.getMessage("message.too_many_files", null, locale));
 			}
 		} catch (CSFileSystemException e) {
@@ -227,10 +233,50 @@ public class MedadataController {
 	@RequestMapping(value="/save", method = RequestMethod.POST)
 	public String save(HttpServletRequest webRequest, RedirectAttributes redirectAttributes, Locale locale) {
 		String[] fileSelected = webRequest.getParameterValues("fileSelected");
+		String selectedAll = webRequest.getParameter("selectAllFromList");
 		String[] files = webRequest.getParameterValues("files");
+		List<CSEntryMetadata> metadatas = new ArrayList<CSEntryMetadata>();
 		B2Context b2context = new B2Context(webRequest);
 		ReceiptOptions ro = new ReceiptOptions();
 
+		CSContext ctxCS = null;
+		List<String> allFiles = null;
+		try {
+			ctxCS = CSContext.getContext();
+			// if in selected all mode
+			if ("true".equals(selectedAll)) {
+				allFiles = new ArrayList<String>();
+				for (String file : files) {
+					List<String> f = new ArrayList<String>();
+					MetadataUtil.getFilesInPath(f, file);
+					allFiles.addAll(f);
+				}
+				
+			} else {
+				allFiles = Arrays.asList(fileSelected);
+			}
+			
+			for (String file : allFiles) {
+				CSEntry entry = ctxCS.findEntry(file);
+
+				CSEntryMetadata metadata = entry.getCSEntryMetadata();
+				metadatas.add(metadata);
+			}
+		} catch (CSFileSystemException e) {
+			ctxCS.rollback();
+			LogServiceFactory.getInstance().logError("Exception occured while saving the metadata.", e);
+			throw new RuntimeException(messageSource.getMessage("message.failed_save_metadata", null, locale), e);
+		} finally {
+			if (ctxCS != null) {
+				try {
+					ctxCS.commit();
+				} catch (XythosException e) {
+					LogServiceFactory.getInstance().logError("Exception occured while commiting csContext.", e);
+					throw new RuntimeException(messageSource.getMessage("message.contact_admin", null, locale), e);
+				}
+			}
+		}
+		
 		// find out the form integration key. e.g. bb_xxxxxxxxx
 		String key = "";
 		try {
@@ -253,37 +299,15 @@ public class MedadataController {
 			}
 		}
 
-		// try to save them
-		CSContext ctxCS = null;
-		try {
-			ctxCS = CSContext.getContext();
 			
-			for (String file : fileSelected) {
-				CSEntry entry = ctxCS.findEntry(file);
-
-				CSEntryMetadata metadata = entry.getCSEntryMetadata();
-
-				for (MetadataAttribute attribute : attributes) { 
-					metadata.setStandardProperty(attribute.getId(), (attribute.getValue() == null ? "" : attribute.getValue()));
+		for (CSEntryMetadata metadata : metadatas) {
+			for (MetadataAttribute attribute : attributes) { 
+				metadata.setStandardProperty(attribute.getId(), (attribute.getValue() == null ? "" : attribute.getValue()));
 //				String xythosIdStr = entry.getFileSystemEntry().getEntryID();
 //				System.out.println("xythosIdStr: "+xythosIdStr);
-				}
-			}
-			ro.addSuccessMessage(messageSource.getMessage("message.save_change_success", null, locale));
-		} catch (CSFileSystemException e) {
-			ctxCS.rollback();
-			LogServiceFactory.getInstance().logError("Exception occured while saving the metadata.", e);
-			throw new RuntimeException(messageSource.getMessage("message.failed_save_metadata", null, locale), e);
-		} finally {
-			if (ctxCS != null) {
-				try {
-					ctxCS.commit();
-				} catch (XythosException e) {
-					LogServiceFactory.getInstance().logError("Exception occured while commiting csContext.", e);
-					throw new RuntimeException(messageSource.getMessage("message.contact_admin", null, locale), e);
-				}
 			}
 		}
+		ro.addSuccessMessage(messageSource.getMessage("message.save_change_success", null, locale));
 
 		InlineReceiptUtil.addReceiptToRequest(webRequest, ro);
 

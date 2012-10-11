@@ -58,7 +58,7 @@ public class SettingController {
 
 		return "redirect:"+InlineReceiptUtil.addSuccessReceiptToUrl(
 				b2Context.getServerUrl()+PlugInUtil.getPlugInManagerURL(), 
-				"The settings for Metadata Editor has been saved successfully!");
+				"The settings for Metadata Editor have been saved successfully!");
 	}
 	
 }
