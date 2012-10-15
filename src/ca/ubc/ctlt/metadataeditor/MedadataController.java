@@ -301,10 +301,11 @@ public class MedadataController {
 
 		/* OK, the code below doesn't work when the files are imported from archive. 
 		   A CSFileSystemException was thrown out with "Transaction Ended" message. 
-		   It seems system is trying to create xythos property with createXythosProperty
-		   and somehow the transaction end so the second setStandardProperty call failed.
-		   A workaround is to get the file system entry everytime before making 
-		   setStandardProperty calls
+		   It seems system is trying to create xythos property with createXythosProperty 
+		   and somehow the transaction ends, maybe closed by createXythosProperty.  So 
+		   the second setStandardProperty call fails. The workaround is to get the file 
+		   system entry every time before making setStandardProperty calls. This make 
+		   setting the properties slow.
 		*/
 //		for (CSEntryMetadata metadata : metadatas) {
 //			for (MetadataAttribute attribute : attributes) { 
