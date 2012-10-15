@@ -185,7 +185,7 @@ public class MedadataController {
 				
 				MetadataUtil.getFilesInPathWithMetadata(files, entry, startIndex, numResults);
 			}
-			if (files.size() > 1000) {
+			if (files.size() > 100) {
 				//canSelectAll = "false";
 				ro.addWarningMessage(messageSource.getMessage("message.too_many_files", null, locale));
 			}
@@ -299,14 +299,30 @@ public class MedadataController {
 			}
 		}
 
-			
-		for (CSEntryMetadata metadata : metadatas) {
-			for (MetadataAttribute attribute : attributes) { 
+		/* OK, the code below doesn't work when the files are imported from archive. 
+		   A CSFileSystemException was thrown out with "Transaction Ended" message. 
+		   It seems system is trying to create xythos property with createXythosProperty
+		   and somehow the transaction end so the second setStandardProperty call failed.
+		   A workaround is to get the file system entry everytime before making 
+		   setStandardProperty calls
+		*/
+//		for (CSEntryMetadata metadata : metadatas) {
+//			for (MetadataAttribute attribute : attributes) { 
+//				System.out.println(metadata.getStandardProperty(attribute.getId()));
+//				System.out.println(attribute.getId()+"="+(attribute.getValue() == null ? "" : attribute.getValue()));
+//				metadata.setStandardProperty(attribute.getId(), (attribute.getValue() == null ? "" : attribute.getValue()));
+////				String xythosIdStr = entry.getFileSystemEntry().getEntryID();
+////				System.out.println("xythosIdStr: "+xythosIdStr);
+//			}
+//		}
+		for (String file : allFiles) {
+			for (MetadataAttribute attribute : attributes) {
+				CSEntry entry = ctxCS.findEntry(file);
+				CSEntryMetadata metadata = entry.getCSEntryMetadata();
 				metadata.setStandardProperty(attribute.getId(), (attribute.getValue() == null ? "" : attribute.getValue()));
-//				String xythosIdStr = entry.getFileSystemEntry().getEntryID();
-//				System.out.println("xythosIdStr: "+xythosIdStr);
 			}
 		}
+		
 		ro.addSuccessMessage(messageSource.getMessage("message.save_change_success", null, locale));
 
 		InlineReceiptUtil.addReceiptToRequest(webRequest, ro);
