@@ -41,7 +41,7 @@ import com.xythos.common.api.XythosException;
 
 @Controller
 @RequestMapping("/metadata")
-public class MedadataController {
+public class MetadataController {
 	
 	@Autowired
     private MessageSource messageSource;
@@ -314,11 +314,27 @@ public class MedadataController {
 ////				System.out.println("xythosIdStr: "+xythosIdStr);
 //			}
 //		}
-		for (String file : allFiles) {
-			for (MetadataAttribute attribute : attributes) {
-				CSEntry entry = ctxCS.findEntry(file);
-				CSEntryMetadata metadata = entry.getCSEntryMetadata();
-				metadata.setStandardProperty(attribute.getId(), (attribute.getValue() == null ? "" : attribute.getValue()));
+		
+		// Save the new metadata values in a single transaction. 
+		try {
+			ctxCS = CSContext.getContext();
+			for (String file : allFiles) {
+				for (MetadataAttribute attribute : attributes) {
+					CSEntry entry = ctxCS.findEntry(file);
+					CSEntryMetadata metadata = entry.getCSEntryMetadata();
+					metadata.setStandardProperty(attribute.getId(), (attribute.getValue() == null ? "" : attribute.getValue()));
+				}
+			}
+		} catch (Exception e) {
+			ctxCS.rollback();
+		} finally {
+			if (ctxCS != null) {
+				try {
+					ctxCS.commit();
+				} catch (XythosException e) {
+					LogServiceFactory.getInstance().logError("Exception occured while commiting csContext.", e);
+					throw new RuntimeException(messageSource.getMessage("message.contact_admin", null, locale), e);
+				}
 			}
 		}
 		
