@@ -37,7 +37,7 @@
 	</target>
 
 	<target name="package-war" depends="compile">
-		<war destfile="${b2.package.name}.war" basedir="webContent">
+		<war destfile="${b2.package.name}.war" basedir="WebContent">
 			<classes dir="bin"></classes>
 		</war>
 	</target>
