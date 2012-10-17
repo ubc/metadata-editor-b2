@@ -240,19 +240,17 @@ public class MedadataController {
 		ReceiptOptions ro = new ReceiptOptions();
 
 		CSContext ctxCS = null;
-		List<String> allFiles = null;
+		List<String> allFiles = new ArrayList<String>();
 		try {
 			ctxCS = CSContext.getContext();
 			// if in selected all mode
 			if ("true".equals(selectedAll)) {
-				allFiles = new ArrayList<String>();
 				for (String file : files) {
 					List<String> f = new ArrayList<String>();
 					MetadataUtil.getFilesInPath(f, file);
 					allFiles.addAll(f);
 				}
-				
-			} else {
+			} else if (fileSelected != null) {
 				allFiles = Arrays.asList(fileSelected);
 			}
 			
