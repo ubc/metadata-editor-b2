@@ -110,11 +110,7 @@ public class MetadataUtil {
 	public static void getFilesInPathWithMetadata(List<FileWrapper> files, CSEntry entry, int startIndex, int numResults) {
 		if (entry instanceof CSFile) {
 			// mark the files that are not showing on the page 
-			boolean visible = false;
-			if (files.size() >= startIndex && files.size() < startIndex + numResults) {
-				visible = true;
-			}
-			files.add(new FileWrapper((CSFile)entry, visible));
+			files.add(new FileWrapper((CSFile)entry, false));
 		} else if (entry instanceof CSDirectory) {
 			CSDirectory dir = (CSDirectory) entry;
 			List<CSEntry> contents = dir.getDirectoryContents();

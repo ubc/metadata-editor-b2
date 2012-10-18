@@ -7,6 +7,7 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Enumeration;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -38,6 +39,8 @@ import blackboard.platform.servlet.InlineReceiptUtil;
 
 import com.spvsoftwareproducts.blackboard.utils.B2Context;
 import com.xythos.common.api.XythosException;
+
+import edu.emory.mathcs.backport.java.util.Collections;
 
 @Controller
 @RequestMapping("/metadata")
@@ -138,8 +141,11 @@ public class MetadataController {
 		if (null == ro) {
 			ro = new ReceiptOptions();
 		}
+
 		int startIndex = (webRequest.getParameter("startIndex") == null) ? 0 : Integer.parseInt((webRequest.getParameter("startIndex")));
 		int numResults = (webRequest.getParameter("numResults") == null) ? 25 : Integer.parseInt((webRequest.getParameter("numResults")));
+		boolean showAll = (webRequest.getParameter("showAll") != null);
+		String sortDir = webRequest.getParameter("sortDir");
 		
 		//TODO: need to figure out a way to set the default # of rows showing in the list
 //		HttpSession session = webRequest.getSession();
@@ -180,6 +186,7 @@ public class MetadataController {
 		
 		try {
 			ctxCS = CSContext.getContext();
+		
 			for (String file : fileSet) {
 				CSEntry entry = ctxCS.findEntry(file);
 				
@@ -206,6 +213,24 @@ public class MetadataController {
 
 
 		// load the metadata changes (e.g. last modified) from database
+		// need to sort first because we need to know which files are visible to the user
+		Collections.sort(files); // sort files by file path (ascending not case-sensitive)
+		if (sortDir != null && sortDir.equals("DESCENDING")) { // user wants it reversed
+			Collections.reverse(files);
+		}
+		// only get metadata for max 1000 items, it threw an error when I went over 1000
+		int endIndex = startIndex + numResults; 
+		if (endIndex > 1000 || showAll) {
+			endIndex = 1000;
+		}
+		// mark the files that we should load metadata for
+		for (int i = startIndex; i < endIndex; i++) {
+			if (i >= files.size()) {
+				break;
+			}
+			files.get(i).setVisible(true);
+		}
+		// load metadata for visible files
 		if (0 != files.size()) {
 			try {
 				MetaDataChangeSelectQuery query = new MetaDataChangeSelectQuery(b2Context, files);
@@ -215,7 +240,6 @@ public class MetadataController {
 				throw new RuntimeException(messageSource.getMessage("message.contact_admin", null, locale), e);
 			}
 		}
-		
 		
 		InlineReceiptUtil.addReceiptToRequest(webRequest, ro);
 		

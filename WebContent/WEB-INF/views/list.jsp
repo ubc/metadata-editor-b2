@@ -47,9 +47,12 @@ pageContext.setAttribute("version", BuildingBlockHelper.getVersion());
 		<bbNG:dataCollection>
 			<bbNG:step title="${verify_file}">
 				<bbNG:inventoryList collection="${files}" objectVar="file" 
-					className="FileWrapper" description="${list_selected_files}" enableSelectEntireList="${canSelectAll}" >
+					className="FileWrapper" description="${list_selected_files}" enableSelectEntireList="${canSelectAll}"
+					initialSortCol="file" >
 					<bbNG:listCheckboxElement name="fileSelected" value="${file.filePath}" />
-					<bbNG:listElement label="File" name="file" isRowHeader="true"><a href="/bbcswebdav${file.filePath}" target="_blank">${file.filePath}</a></bbNG:listElement>
+					<bbNG:listElement label="File" name="file" isRowHeader="true" comparator="${file.cmPath}">
+						<a href="/bbcswebdav${file.filePath}" target="_blank">${file.filePath}</a>
+					</bbNG:listElement>
 					<c:forEach items="${attributes}" varStatus="status" var="attribute">
 						<c:if test="${attribute.type == 'Boolean'}">
 							<jsp:useBean id="attribute" type="ca.ubc.ctlt.metadataeditor.MetadataAttribute" />
