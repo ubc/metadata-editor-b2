@@ -8,6 +8,7 @@ import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Enumeration;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -186,15 +187,22 @@ public class MetadataController {
 		
 		try {
 			ctxCS = CSContext.getContext();
+			boolean noPermission = false;
 		
 			for (String file : fileSet) {
 				CSEntry entry = ctxCS.findEntry(file);
 				
 				MetadataUtil.getFilesInPathWithMetadata(files, entry, startIndex, numResults);
+				if (!ctxCS.canWrite(entry)) {
+					noPermission = true;
+				}
 			}
 			if (files.size() > 100) {
 				//canSelectAll = "false";
 				ro.addWarningMessage(messageSource.getMessage("message.too_many_files", null, locale));
+			}
+			if (noPermission) {
+				ro.addWarningMessage(messageSource.getMessage("message.permission_warning", null, locale));
 			}
 		} catch (CSFileSystemException e) {
 			ctxCS.rollback();
@@ -259,7 +267,6 @@ public class MetadataController {
 		String[] fileSelected = webRequest.getParameterValues("fileSelected");
 		String selectedAll = webRequest.getParameter("selectAllFromList");
 		String[] files = webRequest.getParameterValues("files");
-		List<CSEntryMetadata> metadatas = new ArrayList<CSEntryMetadata>();
 		B2Context b2context = new B2Context(webRequest);
 		ReceiptOptions ro = new ReceiptOptions();
 
@@ -275,15 +282,21 @@ public class MetadataController {
 					allFiles.addAll(f);
 				}
 			} else if (fileSelected != null) {
-				allFiles = Arrays.asList(fileSelected);
+				allFiles = new ArrayList<String>(Arrays.asList(fileSelected));
 			}
 			
-			for (String file : allFiles) {
+			// do not process files that we don't have permission to change
+			Iterator<String> i = allFiles.iterator();
+			while(i.hasNext()) {
+				String file = i.next();
 				CSEntry entry = ctxCS.findEntry(file);
-
-				CSEntryMetadata metadata = entry.getCSEntryMetadata();
-				metadatas.add(metadata);
+				if (!ctxCS.canWrite(entry)) {
+					i.remove();
+					String[] arg = {file};
+					ro.addWarningMessage(messageSource.getMessage("message.permission_error", arg, locale));
+				}
 			}
+			
 		} catch (CSFileSystemException e) {
 			ctxCS.rollback();
 			LogServiceFactory.getInstance().logError("Exception occured while saving the metadata.", e);
@@ -321,24 +334,6 @@ public class MetadataController {
 			}
 		}
 
-		/* OK, the code below doesn't work when the files are imported from archive. 
-		   A CSFileSystemException was thrown out with "Transaction Ended" message. 
-		   It seems system is trying to create xythos property with createXythosProperty 
-		   and somehow the transaction ends, maybe closed by createXythosProperty.  So 
-		   the second setStandardProperty call fails. The workaround is to get the file 
-		   system entry every time before making setStandardProperty calls. This make 
-		   setting the properties slow.
-		*/
-//		for (CSEntryMetadata metadata : metadatas) {
-//			for (MetadataAttribute attribute : attributes) { 
-//				System.out.println(metadata.getStandardProperty(attribute.getId()));
-//				System.out.println(attribute.getId()+"="+(attribute.getValue() == null ? "" : attribute.getValue()));
-//				metadata.setStandardProperty(attribute.getId(), (attribute.getValue() == null ? "" : attribute.getValue()));
-////				String xythosIdStr = entry.getFileSystemEntry().getEntryID();
-////				System.out.println("xythosIdStr: "+xythosIdStr);
-//			}
-//		}
-		
 		// Save the new metadata values in a single transaction. 
 		try {
 			ctxCS = CSContext.getContext();
@@ -362,7 +357,15 @@ public class MetadataController {
 			}
 		}
 		
-		ro.addSuccessMessage(messageSource.getMessage("message.save_change_success", null, locale));
+		if (fileSelected == null) {
+			ro.addWarningMessage(messageSource.getMessage("message.save_change_empty", null, locale));
+		}
+		else if (allFiles.isEmpty()) {
+			ro.addWarningMessage(messageSource.getMessage("message.save_change_noop", null, locale));
+		}
+		else {
+			ro.addSuccessMessage(messageSource.getMessage("message.save_change_success", null, locale));
+		}
 
 		InlineReceiptUtil.addReceiptToRequest(webRequest, ro);
 
