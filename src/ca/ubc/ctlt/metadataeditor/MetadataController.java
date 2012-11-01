@@ -41,7 +41,7 @@ import blackboard.platform.servlet.InlineReceiptUtil;
 import com.spvsoftwareproducts.blackboard.utils.B2Context;
 import com.xythos.common.api.XythosException;
 
-import edu.emory.mathcs.backport.java.util.Collections;
+import java.util.Collections;
 
 @Controller
 @RequestMapping("/metadata")
@@ -131,7 +131,7 @@ public class MetadataController {
     }
     
 	@RequestMapping(value="/list")
-	public String list(HttpServletRequest webRequest, @RequestHeader(value = "referer", required = false) String referer, ModelMap model, Locale locale) throws Exception {
+	public String list(HttpServletRequest webRequest, ModelMap model, Locale locale) throws Exception {
 		List<FileWrapper> files = new ArrayList<FileWrapper>();
 		List<String> fileSet = new ArrayList<String>();
 		B2Context b2Context = new B2Context(webRequest);
@@ -158,16 +158,10 @@ public class MetadataController {
 //		  System.out.println(key + ": " + session.getValue(key) + "<br>");
 //		}
 
-		//PagingInfo pagingInfo = new 
-
-		// figure out the where to go back when cancel button is clicked
-		String goBackUrl = webRequest.getParameter("referer");
-		if (goBackUrl == null && referer != null) {
-			if (referer.indexOf("webui") != -1) {
-				goBackUrl = referer;
-			}
-		}
-		model.addAttribute("referer", goBackUrl);
+		// referer parameter is set by backUrlFilter from header if it is not exists
+		// otherwise, this parameter will be passed around so that we can go back 
+		// when clicked on cancel or OK
+		model.addAttribute("referer", webRequest.getParameter("referer"));
 		
 		// loading the selected files
 		String path = webRequest.getParameter("path");

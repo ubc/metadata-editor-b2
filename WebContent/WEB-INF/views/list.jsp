@@ -48,7 +48,7 @@ pageContext.setAttribute("version", BuildingBlockHelper.getVersion());
 			<bbNG:step title="${verify_file}">
 				<bbNG:inventoryList collection="${files}" objectVar="file" 
 					className="FileWrapper" description="${list_selected_files}" enableSelectEntireList="${canSelectAll}"
-					initialSortCol="file" >
+					initialSortCol="file" includePageParameters="true">
 					<bbNG:listCheckboxElement name="fileSelected" value="${file.filePath}" />
 					<bbNG:listElement label="File" name="file" isRowHeader="true" comparator="${file.cmPath}">
 						<a href="/bbcswebdav${file.filePath}" target="_blank">${file.filePath}</a>
@@ -75,7 +75,7 @@ pageContext.setAttribute("version", BuildingBlockHelper.getVersion());
 
         		</bbNG:collapsibleList>
 			</bbNG:step>
-			<bbNG:stepSubmit />
+			<bbNG:stepSubmit cancelUrl="${referer}"/>
 			<input type="hidden" name="referer" value="${referer}" />
 			<c:if test="${not empty path}">
 				<input type="hidden" name="path" value="${path}" />

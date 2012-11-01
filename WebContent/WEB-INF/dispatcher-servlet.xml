@@ -25,7 +25,7 @@
     <mvc:annotation-driven />
     <mvc:resources mapping="/css/**" location="/css/"/>
 
-   <bean class="ca.ubc.ctlt.metadataeditor.CustomSimpleMappingExceptionResolver">
+    <bean class="ca.ubc.ctlt.metadataeditor.CustomSimpleMappingExceptionResolver">
 		<property name="exceptionMappings">
 			<props>
 			    <prop key="java.lang.NullPointerException">error</prop>
@@ -56,12 +56,14 @@
 	    class="org.springframework.web.servlet.i18n.CookieLocaleResolver">
 	    <property name="defaultLocale" value="en"/>
 	</bean>
-	 
+
 	<bean id="handlerMapping"
-	    class="org.springframework.web.servlet.mvc.annotation.DefaultAnnotationHandlerMapping">
-	    <property name="interceptors">
-	        <ref bean="localeChangeInterceptor" />
-	    </property>
+		class="org.springframework.web.servlet.mvc.annotation.DefaultAnnotationHandlerMapping">
+		<property name="interceptors">
+			<list>
+				<ref bean="localeChangeInterceptor" />
+			</list>
+		</property>
 	</bean>
 
 </beans>

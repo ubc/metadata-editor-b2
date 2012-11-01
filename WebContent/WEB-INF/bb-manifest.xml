@@ -6,7 +6,7 @@
 		<handle value="metadata" />
 		<description value="Metadata Editor" />
 		<default-locale value="en_US"/>
-		<version value="1.0.6" />
+		<version value="1.0.7" />
 		<requires>
 			<bbversion value="9.1" />
 		</requires>
@@ -21,7 +21,7 @@
 		</http-actions>
 		<!-- These two JSPs are displayed when the "remove" and "properties" buttons -->
 		<!-- are pressed on the Building Blocks administration page. -->
-		<!-- <http-actions> <config value="admin/configure.jsp"/> <remove value="admin/remove.jsp"/> 
+		<!-- <http-actions> <config value="admin/configure.jsp"/> <remove value="admin/remove.jsp"/>
 			</http-actions> -->
 		<application-defs>
 			<application handle="MetadataEditor" type="system"
