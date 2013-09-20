@@ -1,19 +1,11 @@
 package ca.ubc.ctlt.metadataeditor;
 
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Enumeration;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.Map.Entry;
-
 import javax.servlet.http.HttpServletRequest;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -28,21 +20,15 @@ import blackboard.cms.filesystem.CSContext;
 import blackboard.cms.filesystem.CSEntry;
 import blackboard.cms.filesystem.CSEntryMetadata;
 import blackboard.cms.filesystem.CSFileSystemException;
-import blackboard.cms.filesystem.security.CSPrincipal;
-import blackboard.cms.filesystem.security.CSPrincipalManager;
 import blackboard.cms.filesystem.security.UserPrincipal;
 import blackboard.cms.metadata.CSFormManagerFactory;
-import blackboard.cms.metadata.XythosMetadataDef;
-import blackboard.cms.xythos.impl.BlackboardFileMetaData;
 import blackboard.data.ReceiptOptions;
 import blackboard.data.user.User;
 import blackboard.persist.Id;
 import blackboard.persist.PersistenceException;
-import blackboard.persist.impl.SelectQuery;
 import blackboard.platform.context.ContextManagerFactory;
 import blackboard.platform.forms.Form;
 import blackboard.platform.log.LogServiceFactory;
-import blackboard.platform.persistence.PersistenceServiceFactory;
 import blackboard.platform.servlet.InlineReceiptUtil;
 
 import com.spvsoftwareproducts.blackboard.utils.B2Context;
@@ -57,86 +43,6 @@ public class MetadataController {
 	
 	@Autowired
     private MessageSource messageSource;
-	
-    public static class MetaDataChangeSelectQuery extends SelectQuery
-    {
-    	private B2Context b2context;
-    	private List<FileWrapper> files;
-    	
-    	public MetaDataChangeSelectQuery(B2Context b2context, List<FileWrapper> files) {
-    		this.b2context = b2context;
-    		this.files = files;
-    	}
-    	  
-    	@Override
-		protected void processRow(ResultSet rst) throws SQLException {
-			String location = rst.getString(3);
-			for (FileWrapper file : files) {
-				if (file.getFilePath().equals(location)) {
-					file.setLastModifedUserId(rst.getInt(1));
-					file.setLastModifed(rst.getString(4));
-					file.setLastModifedUser(rst.getString(5));
-				}
-			}
-		}
-
-    	@Override
-        protected Statement prepareStatement(Connection con)
-            throws SQLException
-        {
-			// count files for select statement
-			StringBuilder fileClause = new StringBuilder();
-			String delim = "";
-			for (FileWrapper file : files) {
-				// don't need to query the files that not visible on the screen
-				if (!file.isVisible()) {
-					continue;
-				}
-				fileClause.append(delim).append('?');
-				delim = ",";
-			}
-        	
-        	// load attributes and count them for select statement
-        	List<MetadataAttribute> attributes = MetadataUtil.getMetadataAtttributes(b2context.getSetting(MetadataUtil.FORM_ID));
-        	StringBuilder nameClause = new StringBuilder();
-        	delim = "";
-			for (MetadataAttribute attribute : attributes) {
-				nameClause.append(delim).append('?');
-				delim = ",";
-			}
-        	
-        	// prepare the sql statement
-            StringBuilder sql = new StringBuilder();
-            sql.append("SELECT users_pk1, name, location, timestamp, u.firstname || ' ' || u.lastname, value ");
-            sql.append("FROM CMS_METADATA_CHANGES c, USERS u ");
-            sql.append("WHERE c.pk1 IN ( ");
-            	sql.append("SELECT max(pk1) FROM ( ");
-            		sql.append("SELECT pk1, users_pk1, location, name, value, timestamp, max(TIMESTAMP) OVER (PARTITION BY location) AS MAX_TIMESTAMP ");
-            		sql.append("FROM CMS_METADATA_CHANGES ");
-            		sql.append("WHERE name IN (" + nameClause.toString() + ")  AND xythos_id IN (" + fileClause.toString() + ")");
-            	sql.append(") GROUP BY location, MAX_TIMESTAMP");
-            sql.append(") AND c.users_pk1 = u.pk1");
-            //System.out.println(sql);
-            
-            // fill in the variables
-            PreparedStatement stmt = con.prepareStatement(sql.toString());
-            int index = 1;
-        	for (MetadataAttribute attribute : attributes) {
-        		stmt.setString(index, attribute.getId());
-        		index++;
-        	}
-        	
-            for (FileWrapper file : files) {
-				if (!file.isVisible()) {
-					continue;
-				}
-            	stmt.setString(index, "xid-"+file.getEntryId());
-            	index++;
-            }
-
-            return stmt;
-        }
-    }
     
 	@RequestMapping(value="/list")
 	public String list(HttpServletRequest webRequest, ModelMap model, Locale locale) throws Exception {
@@ -225,7 +131,7 @@ public class MetadataController {
 		}		
 
 
-		// load the metadata changes (e.g. last modified) from database
+		// load the metadata changes
 		// need to sort first because we need to know which files are visible to the user
 		Collections.sort(files); // sort files by file path (ascending not case-sensitive)
 		if (sortDir != null && sortDir.equals("DESCENDING")) { // user wants it reversed
@@ -245,16 +151,6 @@ public class MetadataController {
 			}
 			files.get(i).setVisible(true);
 		}
-		// load metadata for visible files
-		/*if (0 != files.size()) {
-			try {
-				MetaDataChangeSelectQuery query = new MetaDataChangeSelectQuery(b2Context, files);
-				PersistenceServiceFactory.getInstance().getDbPersistenceManager().runDbQuery(query);
-			} catch (PersistenceException e) {
-				LogServiceFactory.getInstance().logError("Exception occured while reading metadata.", e);
-				throw new RuntimeException(messageSource.getMessage("message.contact_admin", null, locale), e);
-			}
-		}*/
 		
 		InlineReceiptUtil.addReceiptToRequest(webRequest, ro);
 		

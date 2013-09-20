@@ -16,8 +16,6 @@ pageContext.setAttribute("version", BuildingBlockHelper.getVersion());
 <spring:message var="page_title" code="title.editing" arguments="${formWrapper.title}"/>
 <spring:message var="verify_file" code="label.verify_file" />
 <spring:message var="list_selected_files" code="message.list_selected_files" />
-<spring:message var="last_modified_by" code="label.last_modified_by" />
-<spring:message var="last_modified_at" code="label.last_modified_at" />
 <spring:message var="apply_to_files" code="label.apply_to_files" arguments="${formWrapper.title}"/>
 
 <bbNG:learningSystemPage title="${page_title}" ctxId="ctx">
@@ -116,8 +114,6 @@ pageContext.setAttribute("version", BuildingBlockHelper.getVersion());
 							</bbNG:listElement>
 						</c:if>
 					</c:forEach>
-					<bbNG:listElement label="${last_modified_by}" name="lastModifiedBy" isRowHeader="false">${file.lastModifedUser}</bbNG:listElement>
-					<bbNG:listElement label="${last_modified_at}" name="lastModifiedOn" isRowHeader="false">${file.lastModifed}</bbNG:listElement>
 				</bbNG:inventoryList>
 			</bbNG:step>
 			<bbNG:step title="${apply_to_files}">

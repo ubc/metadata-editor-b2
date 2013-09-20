@@ -6,5 +6,5 @@ Features:
 * Bulk changing metadata attributes for files
 * Bulk changing metadata attributes for directories
 * Allowing user to verify the files before changing
-* Providing a list of the files with their attributes (boolean type) and last modified log
+* Providing a list of the files with their attributes (boolean type)
 * Tightly integrated with Learn Metadata Template
