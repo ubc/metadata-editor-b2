@@ -41,11 +41,66 @@ pageContext.setAttribute("version", BuildingBlockHelper.getVersion());
 	{
 		color: #888;
 	}
+	#metadataFilter
+	{
+		 display: none;
+	}
 	</style>
+	
+	<bbNG:jsBlock>
+	<script type="text/javascript">
+	function ubc_m_setFilter(filterId, origin)
+	{
+		$(filterId).checked = origin.checked;
+		$('metadataFilter').submit();
+	}
+	</script>
+	</bbNG:jsBlock>
+
+	<!-- metadataFilter is a hacky way of doing data filtering. We resubmit the page in order to get a list of files
+	that doesn't have files that have already been copyright tagged. -->
+	<bbNG:form action="list" method="post" id="metadataFilter">
+		<bbNG:checkboxElement name="limitTagged" value="true" isSelected="${limitTagged}"></bbNG:checkboxElement>
+		<bbNG:checkboxElement name="limitUploaded" value="true" isSelected="${limitUploaded}"></bbNG:checkboxElement>
+		<bbNG:checkboxElement name="limitAccess" value="true" isSelected="${limitAccess}"></bbNG:checkboxElement>
+
+		<input type="hidden" name="referer" value="${referer}" />
+		<c:if test="${not empty path}">
+			<input type="hidden" name="path" value="${path}" />
+		</c:if>
+		<c:forEach var="file" items="${fileSet}" varStatus="rowCounter">
+			<input type="hidden" name="file${rowCounter.count}" value="${file}" />
+		</c:forEach>
+		<input type="submit" value="submit" />
+	</bbNG:form>
 	
 	<bbNG:form action="save" method="post">
 		<bbNG:dataCollection>
 			<bbNG:step title="${verify_file}">
+<!-- 
+2. Ability to filter the list for the following conditions:
+	Where user is uploader
+	Where user has manage or write access
+	Where files are linked into the course
+	 - no easy way to determine if files are linked by a course
+	 - would have to search through all course content (very very slow)
+-->
+				<bbNG:dataElement>
+					<h3>File Filters</h3>
+					<bbNG:checkboxElement optionLabel="Limit to files that have not been tagged." name="limitTagged" 
+						id="limitTagged2" value="true" 
+						onclick="ubc_m_setFilter('limitTagged', this);" isSelected="${limitTagged}"></bbNG:checkboxElement>
+					<br />
+					<bbNG:checkboxElement optionLabel="Limit to files uploaded by me." name="limitUploaded" id="limitUploaded2" value="true" 
+						onclick="ubc_m_setFilter('limitUploaded', this);" isSelected="${limitUploaded}"></bbNG:checkboxElement>
+					<br />
+					<bbNG:checkboxElement optionLabel="Limit to files where I have manage or write access." name="limitAccess" 
+						id="limitAccess2" value="true" 
+						onclick="ubc_m_setFilter('limitAccess', this);" isSelected="${limitAccess}"></bbNG:checkboxElement>
+					<br />
+					<input type="button" value="Apply" />
+				</bbNG:dataElement>
+
 				<bbNG:inventoryList collection="${files}" objectVar="file" 
 					className="FileWrapper" description="${list_selected_files}" enableSelectEntireList="${canSelectAll}"
 					initialSortCol="file" includePageParameters="true">

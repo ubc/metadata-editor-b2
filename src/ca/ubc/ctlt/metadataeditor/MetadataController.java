@@ -12,6 +12,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Map.Entry;
 
 import javax.servlet.http.HttpServletRequest;
 
@@ -19,7 +20,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.MessageSource;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.ModelMap;
-import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
@@ -28,11 +28,18 @@ import blackboard.cms.filesystem.CSContext;
 import blackboard.cms.filesystem.CSEntry;
 import blackboard.cms.filesystem.CSEntryMetadata;
 import blackboard.cms.filesystem.CSFileSystemException;
+import blackboard.cms.filesystem.security.CSPrincipal;
+import blackboard.cms.filesystem.security.CSPrincipalManager;
+import blackboard.cms.filesystem.security.UserPrincipal;
 import blackboard.cms.metadata.CSFormManagerFactory;
+import blackboard.cms.metadata.XythosMetadataDef;
+import blackboard.cms.xythos.impl.BlackboardFileMetaData;
 import blackboard.data.ReceiptOptions;
+import blackboard.data.user.User;
 import blackboard.persist.Id;
 import blackboard.persist.PersistenceException;
 import blackboard.persist.impl.SelectQuery;
+import blackboard.platform.context.ContextManagerFactory;
 import blackboard.platform.forms.Form;
 import blackboard.platform.log.LogServiceFactory;
 import blackboard.platform.persistence.PersistenceServiceFactory;
@@ -40,6 +47,7 @@ import blackboard.platform.servlet.InlineReceiptUtil;
 
 import com.spvsoftwareproducts.blackboard.utils.B2Context;
 import com.xythos.common.api.XythosException;
+import com.xythos.storageServer.api.FileSystemEntry;
 
 import java.util.Collections;
 
@@ -147,6 +155,9 @@ public class MetadataController {
 		int numResults = (webRequest.getParameter("numResults") == null) ? 25 : Integer.parseInt((webRequest.getParameter("numResults")));
 		boolean showAll = (webRequest.getParameter("showAll") != null);
 		String sortDir = webRequest.getParameter("sortDir");
+		String limitTagged = webRequest.getParameter("limitTagged") == null ? "false" : "true";
+		String limitUploaded = webRequest.getParameter("limitUploaded") == null ? "false" : "true";
+		String limitAccess = webRequest.getParameter("limitAccess") == null ? "false" : "true";
 		
 		//TODO: need to figure out a way to set the default # of rows showing in the list
 //		HttpSession session = webRequest.getSession();
@@ -220,6 +231,8 @@ public class MetadataController {
 		if (sortDir != null && sortDir.equals("DESCENDING")) { // user wants it reversed
 			Collections.reverse(files);
 		}
+		// apply file filters
+		files = applyFilters(files, b2Context, Boolean.valueOf(limitTagged), Boolean.valueOf(limitUploaded), Boolean.valueOf(limitAccess));
 		// only get metadata for max 1000 items, it threw an error when I went over 1000
 		int endIndex = startIndex + numResults; 
 		if (endIndex > 1000 || showAll) {
@@ -233,7 +246,7 @@ public class MetadataController {
 			files.get(i).setVisible(true);
 		}
 		// load metadata for visible files
-		if (0 != files.size()) {
+		/*if (0 != files.size()) {
 			try {
 				MetaDataChangeSelectQuery query = new MetaDataChangeSelectQuery(b2Context, files);
 				PersistenceServiceFactory.getInstance().getDbPersistenceManager().runDbQuery(query);
@@ -241,15 +254,19 @@ public class MetadataController {
 				LogServiceFactory.getInstance().logError("Exception occured while reading metadata.", e);
 				throw new RuntimeException(messageSource.getMessage("message.contact_admin", null, locale), e);
 			}
-		}
+		}*/
 		
 		InlineReceiptUtil.addReceiptToRequest(webRequest, ro);
 		
+		// load attributes
 		List<MetadataAttribute> attributes = MetadataUtil.getMetadataAtttributes(b2Context.getSetting(MetadataUtil.FORM_ID));
 		model.addAttribute("attributes", attributes);
 		model.addAttribute("files", files);
 		model.addAttribute("fileSet", fileSet);
 		model.addAttribute("canSelectAll", canSelectAll);
+		model.addAttribute("limitTagged", limitTagged);
+		model.addAttribute("limitAccess", limitAccess);
+		model.addAttribute("limitUploaded", limitUploaded);
 		model.addAttribute("formWrapper", new FormWrapper(b2Context.getSetting(MetadataUtil.FORM_ID)));
 
 		return "list";
@@ -369,8 +386,95 @@ public class MetadataController {
 			redirectAttributes.addAttribute("file" + i, file);
 			i++;
 		}
-		redirectAttributes.addAttribute("referer", webRequest.getParameter("referer"));
+		// forward single value parameters that aren't files, this is needed to persist file filters
+		Map<String, String[]> parameters = webRequest.getParameterMap();
+		for (String parameter : parameters.keySet()) {
+			if (!parameter.toLowerCase().startsWith("file")) {
+				String[] values = parameters.get(parameter);
+				if (values.length == 1)
+				{
+					redirectAttributes.addAttribute(parameter, values[0]);
+				}
+			}
+		}
 
 		return "redirect:list";
 	}
+	
+	/**
+	 * Helper function to remove files that match enabled filters from the user's view.
+	 * @param files
+	 * @return
+	 */
+	private List<FileWrapper> applyFilters(List<FileWrapper> files, B2Context b2Context, 
+			boolean limitTagged, boolean limitUploaded, boolean limitAccess)
+	{
+		//System.out.println("Limit P: " + limitTagged + " Up " + limitUploaded + " Ac " + limitAccess);
+		if (!limitTagged && !limitUploaded && !limitAccess)
+		{ // no filters active
+			return files;
+		}
+
+		// TODO
+		/*
+		 * BUGFIX: Selecting folders work file for limiting files, selecting individual files doesn't
+		 * can be fixed by back button?
+		 */
+		// TODO
+		
+		User user = ContextManagerFactory.getInstance().getContext().getUser();
+		CSContext ctx = CSContext.getContext();
+		List<MetadataAttribute> attributes = MetadataUtil.getMetadataAtttributes(b2Context.getSetting(MetadataUtil.FORM_ID));
+		for (Iterator<FileWrapper> it = files.iterator(); it.hasNext();)
+		{
+			FileWrapper file = it.next();
+			if (limitTagged)
+			{ // remove files that have already been copyright tagged
+				boolean gotoNext = false;
+				for (MetadataAttribute attribute : attributes)
+				{
+					//System.out.println("Checking tag: " + file.getFilePath());
+					Boolean ret = (Boolean) file.getMetaValue(b2Context.getSetting(MetadataUtil.FORM_ID)).get(attribute.getId());
+					if (ret != null && ret != false)
+					{ // there is a valid tag, so remove the file from listing
+						it.remove();
+						gotoNext = true;
+						break;
+					}
+				}
+				if (gotoNext) continue;
+			}
+
+			CSEntry entry = ctx.findEntry(file.getFilePath());
+			if (entry == null) return files; // just in case
+
+			if (limitUploaded)
+			{ // remove files that the user did not upload
+				FileSystemEntry fse = entry.getFileSystemEntry(); // note: undocumented api
+				try
+				{ // basically, if the file's principal id for the creator does not match the current user, we remove the file
+					if (!UserPrincipal.calculatePrincipalID(user).equals(fse.getCreatedByPrincipalID()))
+					{
+						it.remove();
+						continue;
+					}
+				} catch (XythosException e)
+				{
+					e.printStackTrace();
+				}
+			}
+
+			if (limitAccess)
+			{
+				if (!ctx.canManage(entry) && !ctx.canWrite(entry))
+				{ // user doesn't have read or write acces to file, so remove it
+					it.remove();
+					continue;
+				}
+			}
+		}
+		
+		return files;
+	}
+
 }
