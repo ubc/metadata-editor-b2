@@ -31,6 +31,8 @@ import blackboard.platform.forms.Form;
 import blackboard.platform.log.LogServiceFactory;
 import blackboard.platform.servlet.InlineReceiptUtil;
 
+import ca.ubc.ctlt.metadataeditor.CopyrightAlertsInterface.IndexUpdater;
+
 import com.spvsoftwareproducts.blackboard.utils.B2Context;
 import com.xythos.common.api.XythosException;
 import com.xythos.storageServer.api.FileSystemEntry;
@@ -263,6 +265,10 @@ public class MetadataController {
 				}
 			}
 		}
+		
+		// update copyright alerts index
+		IndexUpdater indexupdater = new IndexUpdater();
+		indexupdater.update(allFiles);
 		
 		if (fileSelected == null) {
 			ro.addWarningMessage(messageSource.getMessage("message.save_change_empty", null, locale));
