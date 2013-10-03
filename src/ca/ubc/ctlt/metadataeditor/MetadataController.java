@@ -272,7 +272,10 @@ public class MetadataController {
 		
 		// update copyright alerts index
 		IndexUpdater indexupdater = new IndexUpdater();
-		indexupdater.update(allFiles);
+		boolean ret = indexupdater.update(allFiles);
+		if (!ret) { // copyright alerts index update failed
+			ro.addWarningMessage(messageSource.getMessage("message.save_change_index_update_fail", null, locale));
+		}
 		
 		if (fileSelected == null) {
 			ro.addWarningMessage(messageSource.getMessage("message.save_change_empty", null, locale));

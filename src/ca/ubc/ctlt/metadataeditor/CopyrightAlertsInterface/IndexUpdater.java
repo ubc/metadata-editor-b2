@@ -6,11 +6,9 @@ import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.HashMap;
 import java.util.List;
-
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 
@@ -31,7 +29,13 @@ import blackboard.platform.plugin.PlugInUtil;
  */
 public class IndexUpdater
 {
-	public void update(List<String> files)
+	/**
+	 * Send a request to the copyright-alerts building block to rescan files that's been modified.
+	 * 
+	 * @param files
+	 * @return True if successful or if no copyright-alerts building block found, false otherwise.
+	 */
+	public boolean update(List<String> files)
 	{
 		// first, get the rest url to the copyright alerts building block
 		Context ctx = ContextManagerFactory.getInstance().getContext();
@@ -41,18 +45,17 @@ public class IndexUpdater
 		PlugIn p = pman.getPlugIn("ubc", "copyright-alerts");
 		if (p == null)
 		{ // copyright alerts building block not installed, do nothing
-			return;
+			return true;
 		}
 		URL url;
 		try
 		{
 			// use the request url to get the protocol and domain information, create a relative url based on that
 			url = new URL(new URL(ctx.getRequestUrl()), PlugInUtil.getUri(p, "ondemandindexer/processfiles"));
-		} catch (MalformedURLException e1)
+		} catch (MalformedURLException e)
 		{
-			// TODO Auto-generated catch block
-			e1.printStackTrace();
-			return;
+			e.printStackTrace();
+			return false;
 		}
 
 		// generate request header
@@ -64,24 +67,24 @@ public class IndexUpdater
 		HashMap<String, List<String>> processFiles = new HashMap<String, List<String>>();
 		processFiles.put("files", files);
 		HttpEntity<String> request = new HttpEntity<String>(gson.toJson(processFiles), headers);
-		// response
-		ResponseEntity<String> resp;
 
 		// spring's rest client
 		RestTemplate rt = new RestTemplate();
 		try
 		{
-			resp = rt.postForEntity(
+			rt.postForEntity(
 					new URI(url.toString()),
 					request, String.class);
 		} catch (RestClientException e)
 		{
-			// TODO Auto-generated catch block
 			e.printStackTrace();
+			return false;
 		} catch (URISyntaxException e)
 		{
-			// TODO Auto-generated catch block
 			e.printStackTrace();
+			return false;
 		}
+		
+		return true;
 	}
 }
