@@ -317,13 +317,6 @@ public class MetadataController {
 			return files;
 		}
 
-		// TODO
-		/*
-		 * BUGFIX: Selecting folders work file for limiting files, selecting individual files doesn't
-		 * can be fixed by back button?
-		 */
-		// TODO
-		
 		User user = ContextManagerFactory.getInstance().getContext().getUser();
 		CSContext ctx = CSContext.getContext();
 		List<MetadataAttribute> attributes = MetadataUtil.getMetadataAtttributes(b2Context.getSetting(MetadataUtil.FORM_ID));

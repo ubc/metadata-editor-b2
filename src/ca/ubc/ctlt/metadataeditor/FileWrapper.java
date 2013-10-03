@@ -1,11 +1,14 @@
 package ca.ubc.ctlt.metadataeditor;
 
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.Comparator;
 import java.util.Map;
 
 import blackboard.base.GenericFieldComparator;
 import blackboard.cms.filesystem.CSFile;
 
-public class FileWrapper implements Comparable {
+public class FileWrapper implements Comparable<FileWrapper> {
 	private int mLastModifedUserId;
 	private String mLastModifedUser;
 	private String mLastModifed;
@@ -15,6 +18,13 @@ public class FileWrapper implements Comparable {
 	/** Comparator to enable sorting by path for bbNG:inventoryList */
 	private static GenericFieldComparator<FileWrapper> cmPath = 
 			new GenericFieldComparator<FileWrapper>("getFilePath", FileWrapper.class);
+	/** Comparator to enable sorting by creation time for bbNG:inventoryList */
+	private static Comparator<FileWrapper> cmCreationTimestamp = 
+			new Comparator<FileWrapper>() {
+				public int compare(FileWrapper file1, FileWrapper file2) {
+					return file1.getFileEntry().getCreationTimestamp().compareTo(file2.getFileEntry().getCreationTimestamp());
+				}
+			};
 
 	public FileWrapper(CSFile csFile) {
 		this(csFile, true);
@@ -56,6 +66,12 @@ public class FileWrapper implements Comparable {
 	public String getLastModifedUser() {
 		return mLastModifedUser;
 	}
+	
+	public String getCreationTimestamp() {
+		DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd hh:mm:ss a");
+		String ret = dateFormat.format(mFileEntry.getCreationTimestamp());
+		return ret;
+	}
 
 	public void setLastModifedUser(String mLastModifedUser) {
 		this.mLastModifedUser = mLastModifedUser;
@@ -79,10 +95,26 @@ public class FileWrapper implements Comparable {
 	}
 
 	/**
+	 * @return the cmCreationTimestamp
+	 */
+	public Comparator<FileWrapper> getCmCreationTimestamp()
+	{
+		return cmCreationTimestamp;
+	}
+
+	/**
+	 * @return the mFileEntry
+	 */
+	public CSFile getFileEntry()
+	{
+		return mFileEntry;
+	}
+
+	/**
 	 * Note that this comparison MUST match the same sort used for bbNG:inventoryList
 	 */
 	@Override
-	public int compareTo(Object arg0)
+	public int compareTo(FileWrapper arg0)
 	{
 		FileWrapper other = (FileWrapper) arg0;
 		return getFilePath().compareToIgnoreCase(other.getFilePath());

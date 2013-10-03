@@ -96,7 +96,6 @@ pageContext.setAttribute("version", BuildingBlockHelper.getVersion());
 						id="limitAccess2" value="true" 
 						onclick="ubc_m_setFilter('limitAccess', this);" isSelected="${limitAccess}"></bbNG:checkboxElement>
 					<br />
-					<input type="button" value="Apply" />
 				</bbNG:dataElement>
 
 				<bbNG:inventoryList collection="${files}" objectVar="file" 
@@ -114,6 +113,9 @@ pageContext.setAttribute("version", BuildingBlockHelper.getVersion());
 							</bbNG:listElement>
 						</c:if>
 					</c:forEach>
+					<bbNG:listElement label="Created" name="created" comparator="${file.cmCreationTimestamp}">
+						${file.creationTimestamp}
+					</bbNG:listElement>
 				</bbNG:inventoryList>
 			</bbNG:step>
 			<bbNG:step title="${apply_to_files}">
