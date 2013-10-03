@@ -19,6 +19,7 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import blackboard.cms.filesystem.CSContext;
 import blackboard.cms.filesystem.CSEntry;
 import blackboard.cms.filesystem.CSEntryMetadata;
+import blackboard.cms.filesystem.CSFile;
 import blackboard.cms.filesystem.CSFileSystemException;
 import blackboard.cms.filesystem.security.UserPrincipal;
 import blackboard.cms.metadata.CSFormManagerFactory;
@@ -66,6 +67,7 @@ public class MetadataController {
 		String limitTagged = webRequest.getParameter("limitTagged") == null ? "false" : "true";
 		String limitUploaded = webRequest.getParameter("limitUploaded") == null ? "false" : "true";
 		String limitAccess = webRequest.getParameter("limitAccess") == null ? "false" : "true";
+		String limitLinked = webRequest.getParameter("limitLinked") == null ? "false" : "true";
 		
 		//TODO: need to figure out a way to set the default # of rows showing in the list
 //		HttpSession session = webRequest.getSession();
@@ -140,7 +142,8 @@ public class MetadataController {
 			Collections.reverse(files);
 		}
 		// apply file filters
-		files = applyFilters(files, b2Context, Boolean.valueOf(limitTagged), Boolean.valueOf(limitUploaded), Boolean.valueOf(limitAccess));
+		files = applyFilters(files, b2Context, Boolean.valueOf(limitTagged), Boolean.valueOf(limitUploaded),
+				Boolean.valueOf(limitAccess), Boolean.valueOf(limitLinked));
 		// only get metadata for max 1000 items, it threw an error when I went over 1000
 		int endIndex = startIndex + numResults; 
 		if (endIndex > 1000 || showAll) {
@@ -164,6 +167,7 @@ public class MetadataController {
 		model.addAttribute("canSelectAll", canSelectAll);
 		model.addAttribute("limitTagged", limitTagged);
 		model.addAttribute("limitAccess", limitAccess);
+		model.addAttribute("limitLinked", limitLinked);
 		model.addAttribute("limitUploaded", limitUploaded);
 		model.addAttribute("formWrapper", new FormWrapper(b2Context.getSetting(MetadataUtil.FORM_ID)));
 
@@ -309,10 +313,10 @@ public class MetadataController {
 	 * @return
 	 */
 	private List<FileWrapper> applyFilters(List<FileWrapper> files, B2Context b2Context, 
-			boolean limitTagged, boolean limitUploaded, boolean limitAccess)
+			boolean limitTagged, boolean limitUploaded, boolean limitAccess, boolean limitLinked)
 	{
 		//System.out.println("Limit P: " + limitTagged + " Up " + limitUploaded + " Ac " + limitAccess);
-		if (!limitTagged && !limitUploaded && !limitAccess)
+		if (!limitTagged && !limitUploaded && !limitAccess && !limitLinked)
 		{ // no filters active
 			return files;
 		}
@@ -363,6 +367,17 @@ public class MetadataController {
 			{
 				if (!ctx.canManage(entry) && !ctx.canWrite(entry))
 				{ // user doesn't have read or write acces to file, so remove it
+					it.remove();
+					continue;
+				}
+			}
+			
+			if (limitLinked)
+			{
+				CSFile csfile = file.getFileEntry();
+				String ret = csfile.getCSEntryMetadata().getStandardProperty("linked");
+				if (ret == null || ret.isEmpty() || ret.equals("false"))
+				{ // remove files that don't have the linked property or has it set to false
 					it.remove();
 					continue;
 				}

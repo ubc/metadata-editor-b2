@@ -61,6 +61,7 @@ pageContext.setAttribute("version", BuildingBlockHelper.getVersion());
 		<bbNG:checkboxElement name="limitTagged" value="true" isSelected="${limitTagged}"></bbNG:checkboxElement>
 		<bbNG:checkboxElement name="limitUploaded" value="true" isSelected="${limitUploaded}"></bbNG:checkboxElement>
 		<bbNG:checkboxElement name="limitAccess" value="true" isSelected="${limitAccess}"></bbNG:checkboxElement>
+		<bbNG:checkboxElement name="limitLinked" value="true" isSelected="${limitLinked}"></bbNG:checkboxElement>
 
 		<input type="hidden" name="referer" value="${referer}" />
 		<c:if test="${not empty path}">
@@ -95,6 +96,10 @@ pageContext.setAttribute("version", BuildingBlockHelper.getVersion());
 					<bbNG:checkboxElement optionLabel="Limit to files where I have manage or write access." name="limitAccess" 
 						id="limitAccess2" value="true" 
 						onclick="ubc_m_setFilter('limitAccess', this);" isSelected="${limitAccess}"></bbNG:checkboxElement>
+					<br />
+					<bbNG:checkboxElement optionLabel="Limit to files that has been linked." name="limitLinked" 
+						id="limitLinked2" value="true" 
+						onclick="ubc_m_setFilter('limitLinked', this);" isSelected="${limitLinked}"></bbNG:checkboxElement>
 					<br />
 				</bbNG:dataElement>
 
