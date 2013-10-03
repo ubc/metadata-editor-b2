@@ -318,7 +318,6 @@ public class MetadataController {
 	private List<FileWrapper> applyFilters(List<FileWrapper> files, B2Context b2Context, 
 			boolean limitTagged, boolean limitUploaded, boolean limitAccess, boolean limitLinked)
 	{
-		//System.out.println("Limit P: " + limitTagged + " Up " + limitUploaded + " Ac " + limitAccess);
 		if (!limitTagged && !limitUploaded && !limitAccess && !limitLinked)
 		{ // no filters active
 			return files;
@@ -335,9 +334,8 @@ public class MetadataController {
 				boolean gotoNext = false;
 				for (MetadataAttribute attribute : attributes)
 				{
-					//System.out.println("Checking tag: " + file.getFilePath());
-					Boolean ret = (Boolean) file.getMetaValue(b2Context.getSetting(MetadataUtil.FORM_ID)).get(attribute.getId());
-					if (ret != null && ret != false)
+					String ret = file.getMetadataAttribute(attribute.getId());
+					if (ret != null && !ret.isEmpty())
 					{ // there is a valid tag, so remove the file from listing
 						it.remove();
 						gotoNext = true;
@@ -377,8 +375,7 @@ public class MetadataController {
 			
 			if (limitLinked)
 			{
-				CSFile csfile = file.getFileEntry();
-				String ret = csfile.getCSEntryMetadata().getStandardProperty("linked");
+				String ret = file.getMetadataAttribute("linked");
 				if (ret == null || ret.isEmpty() || ret.equals("false"))
 				{ // remove files that don't have the linked property or has it set to false
 					it.remove();

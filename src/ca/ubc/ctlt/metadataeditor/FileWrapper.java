@@ -6,6 +6,7 @@ import java.util.Comparator;
 import java.util.Map;
 
 import blackboard.base.GenericFieldComparator;
+import blackboard.cms.filesystem.CSEntryMetadata;
 import blackboard.cms.filesystem.CSFile;
 
 public class FileWrapper implements Comparable<FileWrapper> {
@@ -14,6 +15,7 @@ public class FileWrapper implements Comparable<FileWrapper> {
 	private String mLastModifed;
 	private CSFile mFileEntry;
 	private boolean mVisible;
+	private CSEntryMetadata mMetadata;
 	
 	/** Comparator to enable sorting by path for bbNG:inventoryList */
 	private static GenericFieldComparator<FileWrapper> cmPath = 
@@ -33,6 +35,7 @@ public class FileWrapper implements Comparable<FileWrapper> {
 	public FileWrapper(CSFile csFile, boolean visible) {
 		mFileEntry = csFile;
 		mVisible = visible;
+		mMetadata = csFile.getCSEntryMetadata();
 	}
 	
 	public String getFilePath() {
@@ -45,6 +48,10 @@ public class FileWrapper implements Comparable<FileWrapper> {
 
 	public Map<String, Object> getMetaValue(String formIdString) {
 		return MetadataUtil.getMetadata(formIdString, mFileEntry.getFullPath());
+	}
+	
+	public String getMetadataAttribute(String attributeId) {
+		return mMetadata.getStandardProperty(attributeId);
 	}
 
 	public int getLastModifedUserId() {

@@ -50,7 +50,6 @@ pageContext.setAttribute("version", BuildingBlockHelper.getVersion());
 	function ubc_m_setFilter(filterId, origin)
 	{
 		$(filterId).checked = origin.checked;
-		$('metadataFilter').submit();
 	}
 	</script>
 	</bbNG:jsBlock>
@@ -101,6 +100,7 @@ pageContext.setAttribute("version", BuildingBlockHelper.getVersion());
 						id="limitLinked2" value="true" 
 						onclick="ubc_m_setFilter('limitLinked', this);" isSelected="${limitLinked}"></bbNG:checkboxElement>
 					<br />
+					<input type="button" value="Apply" onclick="$('metadataFilter').submit();" /> 
 				</bbNG:dataElement>
 
 				<bbNG:inventoryList collection="${files}" objectVar="file" 
