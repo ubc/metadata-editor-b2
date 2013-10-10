@@ -31,7 +31,7 @@ public class MetadataRequestWrapper extends HttpServletRequestWrapper {
 	}
 
 	@Override
-	public Map getParameterMap() {
+	public Map<String, String> getParameterMap() {
 		Map<String, String> map = new HashMap<String, String>(super.getParameterMap());
 		map.put("referer", this.getParameter("referer"));
 		return map;

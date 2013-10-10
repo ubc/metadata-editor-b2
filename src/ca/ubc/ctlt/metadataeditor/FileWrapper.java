@@ -14,7 +14,6 @@ public class FileWrapper implements Comparable<FileWrapper> {
 	private String mLastModifedUser;
 	private String mLastModifed;
 	private CSFile mFileEntry;
-	private boolean mVisible;
 	private CSEntryMetadata mMetadata;
 	
 	/** Comparator to enable sorting by path for bbNG:inventoryList */
@@ -29,12 +28,7 @@ public class FileWrapper implements Comparable<FileWrapper> {
 			};
 
 	public FileWrapper(CSFile csFile) {
-		this(csFile, true);
-	}
-	
-	public FileWrapper(CSFile csFile, boolean visible) {
 		mFileEntry = csFile;
-		mVisible = visible;
 		mMetadata = csFile.getCSEntryMetadata();
 	}
 	
@@ -82,14 +76,6 @@ public class FileWrapper implements Comparable<FileWrapper> {
 
 	public void setLastModifedUser(String mLastModifedUser) {
 		this.mLastModifedUser = mLastModifedUser;
-	}
-
-	public boolean isVisible() {
-		return mVisible;
-	}
-
-	public void setVisible(boolean visible) {
-		this.mVisible = visible;
 	}
 
 	/**

@@ -149,13 +149,6 @@ public class MetadataController {
 		if (endIndex > 1000 || showAll) {
 			endIndex = 1000;
 		}
-		// mark the files that we should load metadata for
-		for (int i = startIndex; i < endIndex; i++) {
-			if (i >= files.size()) {
-				break;
-			}
-			files.get(i).setVisible(true);
-		}
 		
 		InlineReceiptUtil.addReceiptToRequest(webRequest, ro);
 		
