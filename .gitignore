@@ -1,0 +1,9 @@
+# eclipse
+.classpath
+.project
+# vim
+.*.swp
+# java
+*.class
+bin/
+*.war
