@@ -75,17 +75,10 @@ pageContext.setAttribute("version", BuildingBlockHelper.getVersion());
 	<bbNG:form action="save" method="post">
 		<bbNG:dataCollection>
 			<bbNG:step title="${verify_file}">
-<!-- 
-2. Ability to filter the list for the following conditions:
-	Where user is uploader
-	Where user has manage or write access
-	Where files are linked into the course
-	 - no easy way to determine if files are linked by a course
-	 - would have to search through all course content (very very slow)
--->
+				<!-- The actual user interactable filter selection, it sets the metadataForm with user given config. -->
 				<bbNG:dataElement>
 					<h3>File Filters</h3>
-					<bbNG:checkboxElement optionLabel="Limit to files that have not been tagged." name="limitTagged" 
+					<bbNG:checkboxElement optionLabel="Limit to files that do not have copyright status tags." name="limitTagged" 
 						id="limitTagged2" value="true" 
 						onclick="ubc_m_setFilter('limitTagged', this);" isSelected="${limitTagged}"></bbNG:checkboxElement>
 					<br />
@@ -96,7 +89,7 @@ pageContext.setAttribute("version", BuildingBlockHelper.getVersion());
 						id="limitAccess2" value="true" 
 						onclick="ubc_m_setFilter('limitAccess', this);" isSelected="${limitAccess}"></bbNG:checkboxElement>
 					<br />
-					<bbNG:checkboxElement optionLabel="Limit to files that has been linked." name="limitLinked" 
+					<bbNG:checkboxElement optionLabel="Limit to files that are linked to a course or organization." name="limitLinked" 
 						id="limitLinked2" value="true" 
 						onclick="ubc_m_setFilter('limitLinked', this);" isSelected="${limitLinked}"></bbNG:checkboxElement>
 					<br />

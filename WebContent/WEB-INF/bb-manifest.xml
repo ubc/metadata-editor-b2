@@ -2,7 +2,7 @@
 <manifest>
 	<!-- core extension information -->
 	<plugin>
-		<name value="metadataeditor" />
+		<name value="Metadata Editor" />
 		<handle value="metadata" />
 		<description value="Metadata Editor" />
 		<default-locale value="en_US"/>
