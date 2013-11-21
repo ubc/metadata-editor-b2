@@ -2,12 +2,15 @@
 <project name="ubc-metadata Building Block" default="deploy" basedir=".">
 	<description>Metadata Manager</description>
 
+    <property file="build.properties" />
 	<property name="build.dir" value="${basedir}/bin/"/>
 	<property name="src" value="${basedir}/src/"/>
-	<property name="b2.package.name" value="${basedir}/ubc-metadata"/>
 
     <path id="classpath.base">
         <fileset dir="lib/">
+            <include name="**/*.jar"/>
+        </fileset>
+        <fileset dir="WebContent/WEB-INF/lib/">
             <include name="**/*.jar"/>
         </fileset>
         <fileset dir="${bbsdk}">
