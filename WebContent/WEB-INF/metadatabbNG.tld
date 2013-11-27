@@ -1,0 +1,374 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<!-- <?xml-stylesheet type="text/xsl" href="bbNG.xsl"?> -->
+
+<taglib xmlns="http://java.sun.com/xml/ns/j2ee" xmlns:bb="http://www.blackboard.com/tld-public-api"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://java.sun.com/xml/ns/j2ee/web-jsptaglibrary_2_0.xsd"
+	version="2.0">
+
+	<tlib-version>1.0</tlib-version>
+	<short-name>metadatabbNG</short-name>
+	<uri>/metadatabbNG</uri>
+	<description>
+		Custom inventoryList for metadata-editor-b2
+	</description>
+
+	<tag bb:public="true">
+		<name>metadataInventoryList</name>
+		<tag-class>
+			ca.ubc.ctlt.metadataeditor.inventoryList.MetadataInventoryListTag
+		</tag-class>
+		<tei-class>
+			blackboard.servlet.tags.ngui.list.InventoryListTei
+		</tei-class>
+		<body-content>JSP</body-content>
+		<description>
+			This is a scaffolding tag for an inventory list page and must
+			contain at least one list element. It creates an inventory
+			list used for displaying a collection of objects and its
+			attributes. Given a collection of objects, the paging
+			navigation will be automatically displayed. The initial number
+			of items per page is 25. This number is editable on the UI if
+			given a list options tag. In addition, there must be exactly
+			one list element tag in the body of this tag that has
+			isRowHeader=true. The list element most representative of the
+			rest of the attributes in the row should be designated as the
+			row header (For example, with Name, Age, Weight, and Height,
+			the Name should have isRowHeader=true).
+			A custom event 'bb:activeFilterCallback' has been added for criteria
+			integration. It is fired in the event that the list is refreshed via
+			AJAX while selecting various critieria components. This allows the
+			user to apply various UI customizations employed during the original
+			rendering.
+		</description>
+		<attribute>
+			<name>collection</name>
+			<required>true</required>
+			<rtexprvalue>true</rtexprvalue>
+			<description>
+				The collection of objects passed to the list to be displayed.
+			</description>
+		</attribute>
+		<attribute>
+			<name>className</name>
+			<required>true</required>
+			<rtexprvalue>true</rtexprvalue>
+			<description>
+				The fully qualified class name of the objects in the collection.
+			</description>
+		</attribute>
+		<attribute>
+			<name>objectVar</name>
+			<required>true</required>
+			<rtexprvalue>true</rtexprvalue>
+			<description>
+				Variable name to represent a single object in the collection.
+				This is used in the list element tags to set the attribute of the
+				object to display. Coding naming standards should be followed here,
+				for example, do not have a space in your variable name.
+			</description>
+		</attribute>
+		<attribute>
+			<name>shoppingCart</name>
+			<required>false</required>
+			<rtexprvalue>true</rtexprvalue>
+			<description>
+				Indicates whether this list should behave as a shopping cart. In shopping
+				cart mode the check boxes are coupled with a page state 'the
+				drawer'. When
+				an element is checked it is added to the drawer, and if removed from
+				the
+				drawer it is also unchecked from the list. Drawer state survives page
+				refresh
+				and, once the list is displayed, its check boxes are updated to match
+				the current
+				state of the drawer.
+			</description>
+		</attribute>
+		<attribute>
+			<name>searchCriteria</name>
+			<required>false</required>
+			<rtexprvalue>true</rtexprvalue>
+			<description>
+				Search criteria used to populate the list and render the active filter UI
+				component.
+				When the active filter is modified, it will send an ajax request to the
+				server with
+				the modified search criteria. The server renders and returns a new page
+				using the
+				modified search criteria via ajax. The active filter and list ui components
+				are then
+				extracted and rendered in the designated div tag. Active filter state is
+				preserved.
+				This same process is invoked for these additional page actions: paging
+				(prev/next),
+				refresh, and list sorting.Hence, if searchCriteria is specified it will
+				always render
+				the inventory list in ajax mode. All page refreshes via the active
+				filter, sorting
+				list columns, paging list results will happen via ajax post.
+			</description>
+		</attribute>
+		<attribute>
+			<name>emptyMsg</name>
+			<required>false</required>
+			<rtexprvalue>true</rtexprvalue>
+			<description>
+				The localized text message to be displayed if the given collection is
+				empty.
+				The default message is "No items found."
+			</description>
+		</attribute>
+		<attribute>
+			<name>emptyMsgCustomClass</name>
+			<required>false</required>
+			<rtexprvalue>true</rtexprvalue>
+			<description>
+				If desired, an additional css class can be specified here to use in
+				addition to 'noItems'
+				when rendering the emptyMsg div.
+			</description>
+		</attribute>
+		<attribute>
+			<name>description</name>
+			<required>false</required>
+			<rtexprvalue>true</rtexprvalue>
+			<description>
+				The list description that will be used for the summary of the table
+				that
+				contains this list. The description helps users browsing with accessibility
+				tools quickly understand what kind of information is in the list
+				table.
+				The default summary for the table is: "This is a table showing the
+				attributes of a collection of items."
+			</description>
+		</attribute>
+		<attribute>
+			<name>showDescriptionAsHeader</name>
+			<required>false</required>
+			<rtexprvalue>true</rtexprvalue>
+			<description>
+				Default Value: false.
+				If set to true then the list description will also be shown as a
+				visible header before the table.
+				Note: If the list is empty this title will not be shown, regardless of
+				this value
+			</description>
+		</attribute>
+		<attribute>
+			<name>initialSortCol</name>
+			<required>false</required>
+			<rtexprvalue>true</rtexprvalue>
+			<description>
+				The column to initially sort by when the list is displayed.
+				The value should match the name of a list element. Furthermore, the
+				list element in question
+				also needs to have a bbNG:beanComparator tag specified.
+			</description>
+		</attribute>
+		<attribute>
+			<name>initialSortBy</name>
+			<required>false</required>
+			<rtexprvalue>true</rtexprvalue>
+			<description>
+				The initial direction of sort of the initial sort column.
+				Accepted values are ASCENDING and DESCENDING.
+				The default is sort by ascending.
+			</description>
+		</attribute>
+		<attribute>
+			<name>url</name>
+			<required>false</required>
+			<rtexprvalue>true</rtexprvalue>
+			<description>
+				Url of current page to be used in inventory list links like sort and
+				paging.
+			</description>
+		</attribute>
+		<attribute>
+			<name>includePageParameters</name>
+			<required>false</required>
+			<rtexprvalue>true</rtexprvalue>
+			<description>
+				Flag denoting whether to include page parameters in the list urls. When
+				set to false,
+				only list tag related params will be appended to the provided url or the
+				one obtained
+				from request.
+				Default value is true, therefore unless some hidden input should be carried
+				forward to next pages, such as search parameters, it is recommended
+				to consider
+				setting this value to false. Also, if a page has input that is too long and
+				should
+				not be appended to url, such as textbox or formatted text description,
+				or can be
+				reached from another action as forward, this attribute may need to be set
+				to false.
+			</description>
+		</attribute>
+		<attribute>
+			<name>reorderable</name>
+			<required>false</required>
+			<rtexprvalue>true</rtexprvalue>
+			<description>
+				Whether this inventory list is reorderable. Default: false
+			</description>
+		</attribute>
+		<attribute>
+			<name>reorderingUrl</name>
+			<required>false</required>
+			<rtexprvalue>true</rtexprvalue>
+			<description>
+				Url that will be posted to persist the drag and drop.
+				For easy implementation, use a subclass of BaseListRepositioningAction
+				for your server-side code.
+			</description>
+		</attribute>
+		<attribute>
+			<name>reorderType</name>
+			<required>false</required>
+			<rtexprvalue>true</rtexprvalue>
+			<description>A string describing the type of item being reordered
+				(used as part of the title on the accessible repositioning
+				controls). Required if reorderable.</description>
+		</attribute>
+		<attribute>
+			<name>itemIdAccessor</name>
+			<required>false</required>
+			<rtexprvalue>true</rtexprvalue>
+			<description>
+				Chained list of method names to get a String to be used as an
+				id for each table row. This attribute must be set for a
+				reorderable list. If more than one method need to be called in
+				sequence, "." should be used as a delimiter. The first method
+				in the attribute will be called against each object in the
+				collection. Then subsequent methods will be called against the
+				return value of the previous method call. All the methods
+				specified in the attribute must be accessible and the return
+				type of the final method must be String. No argument passing
+				and type casting will be done during methods invocation. For
+				example, if your collection object is
+				"blackboard.data.discussionboard.Conference" and the attribute
+				is "getId.getExternalString",
+				Conference.getId().getExternalString() will be invoked using
+				java reflection.
+			</description>
+		</attribute>
+		<attribute>
+			<name>itemNameAccessor</name>
+			<required>false</required>
+			<rtexprvalue>true</rtexprvalue>
+			<description>
+				Chained list of method names to get a String to be used as the
+				name of a reorderable item in accessible reordering controls.
+				This attribute must be set for a reorderable list. See the
+				description of reorderableItemIdAccessor attribute.
+			</description>
+		</attribute>
+		<attribute>
+			<name>contextParameters</name>
+			<required>false</required>
+			<rtexprvalue>true</rtexprvalue>
+			<description>
+				Query-string formatted string of additional request parameters to pass to the
+				struts
+				action.
+			</description>
+		</attribute>
+		<attribute>
+			<name>showAll</name>
+			<required>false</required>
+			<rtexprvalue>true</rtexprvalue>
+			<description>
+				Boolean attribute for displaying the all items in the list. The default is
+				false for
+				showing all items.
+			</description>
+		</attribute>
+		<attribute>
+			<name>limitMaxNumOfItems</name>
+			<required>false</required>
+			<rtexprvalue>true</rtexprvalue>
+			<description>
+        <![CDATA[<i>deprecated</i> Since 9.1 SP12; ignored by the application.]]>
+				Boolean attribute to indicate whether maximum number of items in the
+				list is limited. "bbconfig.page.results.size.max"
+				dictates the maximum number.
+			</description>
+		</attribute>
+		<attribute>
+			<name>disableInteractivity</name>
+			<required>false</required>
+			<rtexprvalue>true</rtexprvalue>
+			<description>
+        <![CDATA[<i>deprecated</i> Since 9.1 SP12; ignored by the application.]]>
+				Boolean attribute to indicate whether all the interactivity of the
+				list is disabled.
+			</description>
+		</attribute>
+		<attribute>
+			<name>enableSelectEntireList</name>
+			<required>false</required>
+			<rtexprvalue>true</rtexprvalue>
+			<description>
+				Boolean attribute to indicate whether we can select all the items not only
+				from currentpage, but from the whole list .
+			</description>
+		</attribute>
+		<attribute>
+			<name>renderAjax</name>
+			<required>false</required>
+			<rtexprvalue>false</rtexprvalue>
+			<description>
+        <![CDATA[
+        Boolean attribute for using ajax post to render the list items. The default is false, does not use ajax
+        calls for subsequent paging and sorting requests or in general list results refresh. If set to true, ajax post
+        requests are made, the page rendering happens in ajaxMode. All taglibs modified to work optimally in this mode
+         will honor this setting in subsequent ajax posts. The taglibs that are optimized have been updated to explicitly
+         state that in their taglib description.
+         ]]>
+			</description>
+		</attribute>
+		<attribute>
+			<name>listId</name>
+			<required>false</required>
+			<rtexprvalue>true</rtexprvalue>
+			<description>
+        <![CDATA[
+        The default value is "listContainer".
+        Inventory list  will be [listId].
+        If there are more than one inventoryLists per page,
+        then mandatory unique naming is required for the listId.
+        ]]>
+			</description>
+		</attribute>
+		<attribute>
+			<name>displayPagingControls</name>
+			<required>false</required>
+			<rtexprvalue>true</rtexprvalue>
+			<description>
+				Default: true, but if set to false then the paging controls will not be
+				displayed
+			</description>
+		</attribute>
+		<attribute>
+			<name>pagingInfo</name>
+			<required>false</required>
+			<rtexprvalue>true</rtexprvalue>
+			<description>
+				Provides showAll/pageIndex/pageSize/sortCol/sortDir/recordCount informations
+				about a data-set, then in the TagHelper we needn't get again. This
+				is
+				used for paging.
+			</description>
+		</attribute>
+		<attribute>
+			<name>session</name>
+			<required>true</required>
+			<rtexprvalue>true</rtexprvalue>
+			<description>
+				Nasty hack to assign the startIndex to a certain session.
+			</description>
+		</attribute>
+	</tag>
+</taglib>

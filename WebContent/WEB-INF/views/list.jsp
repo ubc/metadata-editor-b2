@@ -5,8 +5,10 @@
 				java.util.*"
 				errorPage="error.jsp"%>
 <%@ taglib prefix="bbNG" uri="/bbNG"%>
+<%@ taglib prefix="metadatabbNG" uri="/WEB-INF/metadatabbNG.tld"%>
 <%@ taglib uri="/bbUI" prefix="bbUI"%>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core"%>
+<%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions" %>
 <%@ taglib uri="http://www.springframework.org/tags" prefix="spring"%>
 
 <%
@@ -17,6 +19,8 @@ pageContext.setAttribute("version", BuildingBlockHelper.getVersion());
 <spring:message var="verify_file" code="label.verify_file" />
 <spring:message var="list_selected_files" code="message.list_selected_files" />
 <spring:message var="apply_to_files" code="label.apply_to_files" arguments="${formWrapper.title}"/>
+<spring:message var="total_on_page" code="label.total_on_page"/>
+<spring:message var="too_many_files_print" code="message.too_many_files_print"/>
 
 <bbNG:learningSystemPage title="${page_title}" ctxId="ctx">
 
@@ -71,7 +75,7 @@ pageContext.setAttribute("version", BuildingBlockHelper.getVersion());
 		</c:forEach>
 		<input type="submit" value="submit" />
 	</bbNG:form>
-	
+
 	<bbNG:form action="save" method="post">
 		<bbNG:dataCollection>
 			<bbNG:step title="${verify_file}">
@@ -95,10 +99,13 @@ pageContext.setAttribute("version", BuildingBlockHelper.getVersion());
 					<br />
 					<input type="button" value="Apply" onclick="$('metadataFilter').submit();" /> 
 				</bbNG:dataElement>
-
-				<bbNG:inventoryList collection="${files}" objectVar="file" 
+				
+				<div style="width: 100%; text-align: right;">
+					<input type="button" value="Print" onclick="printView();" id="print_button"/>
+				</div> 
+				<metadatabbNG:metadataInventoryList collection="${files}" objectVar="file" 
 					className="FileWrapper" description="${list_selected_files}" enableSelectEntireList="${canSelectAll}"
-					initialSortCol="file" includePageParameters="true">
+					initialSortCol="file" includePageParameters="true" session="<%=ctx.getSession()%>">
 					<bbNG:listCheckboxElement name="fileSelected" value="${file.filePath}" />
 					<bbNG:listElement label="File" name="file" isRowHeader="true" comparator="${file.cmPath}">
 						<a href="/bbcswebdav${file.filePath}" target="_blank">${file.filePath}</a>
@@ -114,7 +121,31 @@ pageContext.setAttribute("version", BuildingBlockHelper.getVersion());
 					<bbNG:listElement label="Created" name="created" comparator="${file.cmCreationTimestamp}">
 						${file.creationTimestamp}
 					</bbNG:listElement>
-				</bbNG:inventoryList>
+				</metadatabbNG:metadataInventoryList>
+				
+				<div id="copyrightCountDiv" style="display: none;">
+					<bbNG:inventoryList collection="${copyrightCount}" objectVar="count"  
+							className="HashMap" includePageParameters="false">
+							<bbNG:listElement name="checkbox" isRowHeader="false">
+							</bbNG:listElement>
+							<bbNG:listElement label="File" name="file" isRowHeader="true">
+								<c:out value="${total_on_page}"></c:out>
+							</bbNG:listElement>
+							<c:forEach items="${attributes}" varStatus="status" var="attribute">
+								<c:if test="${attribute.type == 'Boolean'}">
+									<bbNG:listElement label="${attribute.label}" name="${attribute.id}" isRowHeader="false">
+										<c:choose>
+		  										<c:when test="${empty count[attribute.id]}">0</c:when>
+		  										<c:otherwise><c:out value="${count[attribute.id]}"></c:out></c:otherwise>
+		  									</c:choose>
+									</bbNG:listElement>
+								</c:if>
+							</c:forEach>
+							<bbNG:listElement name="created" isRowHeader="false">
+							</bbNG:listElement>
+					</bbNG:inventoryList>
+				</div>
+				
 			</bbNG:step>
 			<bbNG:step title="${apply_to_files}">
 				<bbNG:collapsibleList id="md" isDynamic="false">
@@ -154,4 +185,59 @@ pageContext.setAttribute("version", BuildingBlockHelper.getVersion());
 	
 	<p id="tinyfootnote">Version: ${version}<br />Open source project, available on <a href="https://github.com/ubc/metadata-editor-b2" target="_blank">Github</a></p>
 	
+	<script type="text/javascript">
+		document.observe("dom:loaded", function() {
+			var row = $$('#copyrightCountDiv tbody tr');
+			var title = '<c:out value="${list_selected_files}" ></c:out>';
+			var tab = $$('#listContainer_datatable[title="' + title + '"] tbody');
+			$(row.first().childElements()).each(function(node){node.setStyle({
+					'border-top': '2px solid #ccc'
+				});
+			});
+			tab.first().insert(row.first());
+		});
+		
+		function printView() {
+			if ("${fn:length(files)}" > 1000) {
+				var msg = '<c:out value="${too_many_files_print}" ></c:out>';
+				if(!confirm(msg)) {
+					return false;
+				}
+			}
+			
+			$("print_button").disable();
+			
+			dataString = "referer=${referer}";
+			<c:if test="${not empty path}">
+				dataString += "&path=${path}";
+			</c:if>
+			<c:forEach var="file" items="${fileSet}" varStatus="rowCounter">
+				dataString += "&files${rowCounter.count}=${file}";
+			</c:forEach>
+		
+			var options = { 
+                    method: "post", 
+                    parameters: dataString,
+                    onComplete: submitForm 
+                }; 
+        	new Ajax.Request('printView', options);
+        	
+			return false;
+		}
+		
+		function submitForm(resp) {
+			$("print_button").enable();
+			var params = [
+			              'height='+screen.height,
+			              'width='+screen.width,
+			              'fullscreen=yes'
+			          ].join(',');
+			
+			win = window.open("","Print view",params);
+			win.document.open();
+			win.document.write(resp.responseText);
+			win.document.close();
+			win.print();
+		}
+	</script>
 </bbNG:learningSystemPage>
