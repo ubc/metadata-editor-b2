@@ -42,7 +42,8 @@ public class IndexUpdater
 		
 		// get ubc-copyright-alerts plugin for use in generating the rest url
 		PlugInManager pman = PlugInManagerFactory.getInstance();
-		PlugIn p = pman.getPlugIn("ubc", "copyright-alerts");
+		PlugIn p = pman.getPlugIn("ubc", "copyright-alerts2"); // fake copyright alerts, shouldn't exist
+		//PlugIn p = pman.getPlugIn("ubc", "copyright-alerts"); // real copyright alerts
 		if (p == null)
 		{ // copyright alerts building block not installed, do nothing
 			return true;
