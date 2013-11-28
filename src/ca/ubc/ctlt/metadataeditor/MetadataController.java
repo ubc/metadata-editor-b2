@@ -19,7 +19,6 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import blackboard.cms.filesystem.CSContext;
 import blackboard.cms.filesystem.CSEntry;
 import blackboard.cms.filesystem.CSEntryMetadata;
-import blackboard.cms.filesystem.CSFile;
 import blackboard.cms.filesystem.CSFileSystemException;
 import blackboard.cms.filesystem.security.UserPrincipal;
 import blackboard.cms.metadata.CSFormManagerFactory;
