@@ -66,13 +66,10 @@
 			<permission type="java.lang.reflect.ReflectPermission" name="suppressAccessChecks" />
 			<permission type="java.security.SecurityPermission" name="*" />
             <permission type="java.lang.RuntimePermission" name="*" />
-            <permission type="java.net.SocketPermission" name="*" actions="connect,resolve" />
-            <permission type="java.lang.reflect.ReflectPermission" name="suppressAccessChecks" />
             <permission type="java.util.PropertyPermission" name="*" actions="read,write" />
-            <permission type="blackboard.data.AttributePermission" name="user.authinfo" actions="get" />
-			<permission type="attribute" name="user.*" actions="get,set" />
+			<permission type="attribute" name="user.*" actions="get" />
 			<permission type="persist" name="Content" actions="persist" />
-			<permission type="socket" name="*" actions="connect" />
+            <!--  <permission type="java.net.SocketPermission" name="*.lms.it.ubc.ca*" actions="connect,resolve" /> -->
 		</permissions>
 
 	</plugin>
