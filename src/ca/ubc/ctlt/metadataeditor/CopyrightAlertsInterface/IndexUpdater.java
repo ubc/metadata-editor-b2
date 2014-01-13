@@ -58,6 +58,8 @@ public class IndexUpdater
 			return false;
 		}
 
+		if (files.size() > 500) return false; // decline updating index if we're updating more than 100 files
+
 		// generate request header
 		HttpHeaders headers = new HttpHeaders();
 		headers.setContentType(MediaType.APPLICATION_JSON);
