@@ -78,7 +78,7 @@ pageContext.setAttribute("version", BuildingBlockHelper.getVersion());
 				<!-- The actual user interactable filter selection, it sets the metadataForm with user given config. -->
 				<bbNG:dataElement>
 					<h3>File Filters</h3>
-					<bbNG:checkboxElement optionLabel="Limit to files that do not have copyright status tags." name="limitTagged" 
+					<bbNG:checkboxElement optionLabel="Limit to files that do not have copyright status attribution tags." name="limitTagged" 
 						id="limitTagged2" value="true" 
 						onclick="ubc_m_setFilter('limitTagged', this);" isSelected="${limitTagged}"></bbNG:checkboxElement>
 					<br />
