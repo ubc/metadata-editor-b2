@@ -2,10 +2,13 @@ package ca.ubc.ctlt.metadataeditor;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+
 import javax.servlet.http.HttpServletRequest;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -30,14 +33,12 @@ import blackboard.platform.context.ContextManagerFactory;
 import blackboard.platform.forms.Form;
 import blackboard.platform.log.LogServiceFactory;
 import blackboard.platform.servlet.InlineReceiptUtil;
-
 import ca.ubc.ctlt.metadataeditor.CopyrightAlertsInterface.IndexUpdater;
+import ca.ubc.ctlt.metadataeditor.inventoryList.MetadataInventoryListTag;
 
 import com.spvsoftwareproducts.blackboard.utils.B2Context;
 import com.xythos.common.api.XythosException;
 import com.xythos.storageServer.api.FileSystemEntry;
-
-import java.util.Collections;
 
 @Controller
 @RequestMapping("/metadata")
@@ -46,123 +47,41 @@ public class MetadataController {
 	@Autowired
     private MessageSource messageSource;
     
+	public List<HashMap<String, Integer>> getCopyrightCount(List<MetadataAttribute> attributes, List<FileWrapper> files, String form_id, int startIndex, int numResults) {
+		HashMap<String, Integer> count = new HashMap<String, Integer>();
+		List<HashMap<String, Integer>> countList = new ArrayList<HashMap<String, Integer>>();
+		int start = 0;
+		int stop = numResults;
+		for (FileWrapper file: files) {
+			if (stop <= 0) break;
+			if (start < startIndex) {
+				start++;
+				continue;
+			}
+			for (MetadataAttribute attribute: attributes) {
+				if (Boolean.TRUE.equals(file.getMetaValue(form_id).get(attribute.getId()))) {
+					Integer i = 1;
+					if (count.get(attribute.getId()) != null) {
+						i = count.get(attribute.getId()) + 1;
+					}
+					count.put(attribute.getId(), i);
+				}
+			}
+			stop--;
+		}
+		countList.add(count);
+		return countList;
+	}
+	
+	@RequestMapping(value="/printView")
+	public String printView(HttpServletRequest webRequest, ModelMap model, Locale locale) throws Exception {
+		createList(webRequest, model, locale, true);
+		return "printView";
+	}
+	
 	@RequestMapping(value="/list")
 	public String list(HttpServletRequest webRequest, ModelMap model, Locale locale) throws Exception {
-		List<FileWrapper> files = new ArrayList<FileWrapper>();
-		List<String> fileSet = new ArrayList<String>();
-		B2Context b2Context = new B2Context(webRequest);
-		CSContext ctxCS = null;
-		String canSelectAll = "true";
-		// Don't create a new object unless it's empty. Otherwise, it will override the message passed from another action
-		ReceiptOptions ro = InlineReceiptUtil.getReceiptFromRequest(webRequest);
-		if (null == ro) {
-			ro = new ReceiptOptions();
-		}
-
-		int startIndex = (webRequest.getParameter("startIndex") == null) ? 0 : Integer.parseInt((webRequest.getParameter("startIndex")));
-		int numResults = (webRequest.getParameter("numResults") == null) ? 25 : Integer.parseInt((webRequest.getParameter("numResults")));
-		boolean showAll = (webRequest.getParameter("showAll") != null);
-		String sortDir = webRequest.getParameter("sortDir");
-		String limitTagged = webRequest.getParameter("limitTagged") == null ? "false" : "true";
-		String limitUploaded = webRequest.getParameter("limitUploaded") == null ? "false" : "true";
-		String limitAccess = webRequest.getParameter("limitAccess") == null ? "false" : "true";
-		String limitLinked = webRequest.getParameter("limitLinked") == null ? "false" : "true";
-		
-		//TODO: need to figure out a way to set the default # of rows showing in the list
-//		HttpSession session = webRequest.getSession();
-//		//session.setAttribute("fileFileWrapperlistContainernumResults", "100");
-//		Enumeration keys = session.getAttributeNames();
-//		while (keys.hasMoreElements())
-//		{
-//		  String key = (String)keys.nextElement();
-//		  System.out.println(key + ": " + session.getValue(key) + "<br>");
-//		}
-
-		// referer parameter is set by backUrlFilter from header if it is not exists
-		// otherwise, this parameter will be passed around so that we can go back 
-		// when clicked on cancel or OK
-		model.addAttribute("referer", webRequest.getParameter("referer"));
-		
-		// loading the selected files
-		String path = webRequest.getParameter("path");
-		if (null != path && !path.isEmpty() ) {
-			fileSet.add(path);
-		} else {
-			Map<String, String[]> parameters = webRequest.getParameterMap();
-			for (String parameter : parameters.keySet()) {
-				if (parameter.toLowerCase().startsWith("file")) {
-					String[] values = parameters.get(parameter);
-					if (1 >= values.length) {
-						fileSet.add(values[0]);
-					}
-				}
-			}
-		}
-		
-		try {
-			ctxCS = CSContext.getContext();
-			boolean noPermission = false;
-		
-			for (String file : fileSet) {
-				CSEntry entry = ctxCS.findEntry(file);
-				
-				MetadataUtil.getFilesInPathWithMetadata(files, entry, startIndex, numResults);
-				if (!ctxCS.canWrite(entry)) {
-					noPermission = true;
-				}
-			}
-			if (files.size() > 100) {
-				//canSelectAll = "false";
-				ro.addWarningMessage(messageSource.getMessage("message.too_many_files", null, locale));
-			}
-			if (noPermission) {
-				ro.addWarningMessage(messageSource.getMessage("message.permission_warning", null, locale));
-			}
-		} catch (CSFileSystemException e) {
-			ctxCS.rollback();
-			LogServiceFactory.getInstance().logError("Exception occured while reading files ", e);
-			throw new RuntimeException(messageSource.getMessage("message.error_reading_files", null, locale), e);
-		} finally {
-			if (ctxCS != null) {
-				try {
-					ctxCS.commit();
-				} catch (XythosException e) {
-					LogServiceFactory.getInstance().logError("Exception occured while commiting csContext.", e);
-					throw new RuntimeException(messageSource.getMessage("message.contact_admin", null, locale), e);
-				}
-			}
-		}		
-
-
-		// load the metadata changes
-		// need to sort first because we need to know which files are visible to the user
-		Collections.sort(files); // sort files by file path (ascending not case-sensitive)
-		if (sortDir != null && sortDir.equals("DESCENDING")) { // user wants it reversed
-			Collections.reverse(files);
-		}
-		// apply file filters
-		files = applyFilters(files, b2Context, Boolean.valueOf(limitTagged), Boolean.valueOf(limitUploaded),
-				Boolean.valueOf(limitAccess), Boolean.valueOf(limitLinked));
-		// only get metadata for max 1000 items, it threw an error when I went over 1000
-		int endIndex = startIndex + numResults; 
-		if (endIndex > 1000 || showAll) {
-			endIndex = 1000;
-		}
-		
-		InlineReceiptUtil.addReceiptToRequest(webRequest, ro);
-		
-		// load attributes
-		List<MetadataAttribute> attributes = MetadataUtil.getMetadataAtttributes(b2Context.getSetting(MetadataUtil.FORM_ID));
-		model.addAttribute("attributes", attributes);
-		model.addAttribute("files", files);
-		model.addAttribute("fileSet", fileSet);
-		model.addAttribute("canSelectAll", canSelectAll);
-		model.addAttribute("limitTagged", limitTagged);
-		model.addAttribute("limitAccess", limitAccess);
-		model.addAttribute("limitLinked", limitLinked);
-		model.addAttribute("limitUploaded", limitUploaded);
-		model.addAttribute("formWrapper", new FormWrapper(b2Context.getSetting(MetadataUtil.FORM_ID)));
-
+		createList(webRequest, model, locale, false);
 		return "list";
 	}
 	
@@ -302,6 +221,125 @@ public class MetadataController {
 		return "redirect:list";
 	}
 	
+	public void createList(HttpServletRequest webRequest, ModelMap model, Locale locale, boolean forPrint) { 
+		List<FileWrapper> files = new ArrayList<FileWrapper>();
+		List<String> fileSet = new ArrayList<String>();
+		B2Context b2Context = new B2Context(webRequest);
+		CSContext ctxCS = null;
+		String canSelectAll = "true";
+		// Don't create a new object unless it's empty. Otherwise, it will override the message passed from another action
+		ReceiptOptions ro = InlineReceiptUtil.getReceiptFromRequest(webRequest);
+		if (null == ro) {
+			ro = new ReceiptOptions();
+		}
+		int startIndex = (forPrint || webRequest.getParameter("startIndex") == null) ? 0 : Integer.parseInt((webRequest.getParameter("startIndex")));
+		if (!forPrint && webRequest.getParameter("startIndex") == null && MetadataInventoryListTag.getStaticStartIndex(ContextManagerFactory.getInstance().getContext().getSession()) != startIndex) {
+			startIndex = MetadataInventoryListTag.getStaticStartIndex(ContextManagerFactory.getInstance().getContext().getSession());
+		}
+		int numResults = (webRequest.getParameter("numResults") == null) ? 25 : Integer.parseInt((webRequest.getParameter("numResults")));
+		boolean showAll = (webRequest.getParameter("showAll") != null);
+		String sortDir = webRequest.getParameter("sortDir");
+		String limitTagged = webRequest.getParameter("limitTagged") == null ? "false" : "true";
+		String limitUploaded = webRequest.getParameter("limitUploaded") == null ? "false" : "true";
+		String limitAccess = webRequest.getParameter("limitAccess") == null ? "false" : "true";
+		String limitLinked = webRequest.getParameter("limitLinked") == null ? "false" : "true";
+		//TODO: need to figure out a way to set the default # of rows showing in the list
+//		HttpSession session = webRequest.getSession();
+//		//session.setAttribute("fileFileWrapperlistContainernumResults", "100");
+//		Enumeration keys = session.getAttributeNames();
+//		while (keys.hasMoreElements())
+//		{
+//		  String key = (String)keys.nextElement();
+//		  System.out.println(key + ": " + session.getValue(key) + "<br>");
+//		}
+
+		// referer parameter is set by backUrlFilter from header if it is not exists
+		// otherwise, this parameter will be passed around so that we can go back 
+		// when clicked on cancel or OK
+		model.addAttribute("referer", webRequest.getParameter("referer"));
+		
+		// loading the selected files
+		String path = webRequest.getParameter("path");
+		if (null != path && !path.isEmpty() ) {
+			fileSet.add(path);
+		} else {
+			Map<String, String[]> parameters = webRequest.getParameterMap();
+			for (String parameter : parameters.keySet()) {
+				if (parameter.toLowerCase().startsWith("file")) {
+					String[] values = parameters.get(parameter);
+					if (1 >= values.length) {
+						fileSet.add(values[0]);
+						model.addAttribute(parameter, values[0]);
+					}
+				}
+			}
+		}
+		
+		try {
+			ctxCS = CSContext.getContext();
+			boolean noPermission = false;
+		
+			for (String file : fileSet) {
+				CSEntry entry = ctxCS.findEntry(file);
+				
+				MetadataUtil.getFilesInPathWithMetadata(files, entry, startIndex, numResults);
+				if (!ctxCS.canWrite(entry)) {
+					noPermission = true;
+				}
+			}
+			if (!forPrint && files.size() > 100) {
+				//canSelectAll = "false";
+				ro.addWarningMessage(messageSource.getMessage("message.too_many_files", null, locale));
+			}
+			if (!forPrint && noPermission) {
+				ro.addWarningMessage(messageSource.getMessage("message.permission_warning", null, locale));
+			}
+		} catch (CSFileSystemException e) {
+			ctxCS.rollback();
+			LogServiceFactory.getInstance().logError("Exception occured while reading files ", e);
+			throw new RuntimeException(messageSource.getMessage("message.error_reading_files", null, locale), e);
+		} finally {
+			if (ctxCS != null) {
+				try {
+					ctxCS.commit();
+				} catch (XythosException e) {
+					LogServiceFactory.getInstance().logError("Exception occured while commiting csContext.", e);
+					throw new RuntimeException(messageSource.getMessage("message.contact_admin", null, locale), e);
+				}
+			}
+		}		
+
+		// load the metadata changes
+		// need to sort first because we need to know which files are visible to the user
+		Collections.sort(files); // sort files by file path (ascending not case-sensitive)
+		if (sortDir != null && sortDir.equals("DESCENDING")) { // user wants it reversed
+			Collections.reverse(files);
+		}
+		// apply file filters
+		files = applyFilters(files, b2Context, Boolean.valueOf(limitTagged), Boolean.valueOf(limitUploaded),
+				Boolean.valueOf(limitAccess), Boolean.valueOf(limitLinked));
+		// only get metadata for max 1000 items, it threw an error when I went over 1000
+		int endIndex = startIndex + numResults; 
+		if (endIndex > 1000 || showAll) {
+			endIndex = 1000;
+		}
+		
+		InlineReceiptUtil.addReceiptToRequest(webRequest, ro);
+		
+		// load attributes
+		List<MetadataAttribute> attributes = MetadataUtil.getMetadataAtttributes(b2Context.getSetting(MetadataUtil.FORM_ID));
+		model.addAttribute("attributes", attributes);
+		model.addAttribute("files", files);
+		model.addAttribute("fileSet", fileSet);
+		model.addAttribute("canSelectAll", canSelectAll);
+		model.addAttribute("limitTagged", limitTagged);
+		model.addAttribute("limitAccess", limitAccess);
+		model.addAttribute("limitLinked", limitLinked);
+		model.addAttribute("limitUploaded", limitUploaded);
+		model.addAttribute("formWrapper", new FormWrapper(b2Context.getSetting(MetadataUtil.FORM_ID)));
+
+		model.addAttribute("copyrightCount", getCopyrightCount(attributes, files, b2Context.getSetting(MetadataUtil.FORM_ID), startIndex, forPrint ? files.size() : numResults));
+	}
 	/**
 	 * Helper function to remove files that match enabled filters from the user's view.
 	 * @param files
