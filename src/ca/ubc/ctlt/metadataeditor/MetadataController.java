@@ -287,7 +287,7 @@ public class MetadataController {
 					noPermission = true;
 				}
 			}
-			if (!forPrint && files.size() > 100) {
+			if (!forPrint && files.size() > 1000) {
 				//canSelectAll = "false";
 				ro.addWarningMessage(messageSource.getMessage("message.too_many_files", null, locale));
 			}

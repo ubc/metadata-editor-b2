@@ -43,7 +43,16 @@ pageContext.setAttribute("version", BuildingBlockHelper.getVersion());
 	{
 		color: #888;
 	}
-	#metadataFilter
+	#print_view_button
+	{
+		float: right;
+		margin-top: 0.5em;
+	}
+	#filter_apply_button
+	{
+		margin-top: 0.5em;
+	}
+	#metadataFilter, #metadataPrintView
 	{
 		 display: none;
 	}
@@ -51,15 +60,42 @@ pageContext.setAttribute("version", BuildingBlockHelper.getVersion());
 	
 	<bbNG:jsBlock>
 	<script type="text/javascript">
+	document.observe("dom:loaded", function() {
+		var row = $$('#copyrightCountDiv tbody tr');
+		var title = '<c:out value="${list_selected_files}" ></c:out>';
+		var tab = $$('#listContainer_datatable[title="' + title + '"] tbody');
+		$(row.first().childElements()).each(function(node){node.setStyle({
+				'border-top': '2px solid #ccc'
+			});
+		});
+		tab.first().insert(row.first());
+	});
+		
 	function ubc_m_setFilter(filterId, origin)
 	{
 		$(filterId).checked = origin.checked;
 	}
+
+	function ubc_m_printView() {
+		if ("${fn:length(files)}" > 500) {
+			var msg = '<c:out value="${too_many_files_print}" ></c:out>';
+			if(!confirm(msg)) {
+				return false;
+			}
+		}
+		
+		$("print_view_button").addClassName("disabled");
+		$('metadataPrintView').submit();
+		return false;
+	}
 	</script>
 	</bbNG:jsBlock>
 
-	<!-- metadataFilter is a hacky way of doing data filtering. We resubmit the page in order to get a list of files
-	that doesn't have files that have already been copyright tagged. -->
+	<!-- These forms live outside of the main form because the Copyright Metadata Template has javascript that prevents form submissions
+	unless one of the copyright attributes is selected. Unfortunately, that javascript applies to secondary forms like these if they're
+	inside the scope of the main form. Moving them outside was a quick solution.  -->
+	<!-- metadataFilter is a hacky way of doing data filtering. We resubmit the page in order to apply the selected filter against
+	the list of files. Note the submit is done in it's counterpart in the main form. -->
 	<bbNG:form action="list" method="post" id="metadataFilter">
 		<bbNG:checkboxElement name="limitTagged" value="true" isSelected="${limitTagged}"></bbNG:checkboxElement>
 		<bbNG:checkboxElement name="limitUploaded" value="true" isSelected="${limitUploaded}"></bbNG:checkboxElement>
@@ -76,9 +112,22 @@ pageContext.setAttribute("version", BuildingBlockHelper.getVersion());
 		<input type="submit" value="submit" />
 	</bbNG:form>
 
+	<!-- Print View Button, another form to submit to bring the user to the print view -->
+	<bbNG:form action="printView" method="post" id="metadataPrintView" target="_top">
+		<c:if test="${not empty path}">
+			<input type="hidden" name="path" value="${path}" />
+		</c:if>
+		<c:forEach var="file" items="${fileSet}" varStatus="rowCounter">
+			<input type="hidden" name="files${rowCounter.count}" value="${file}" />
+		</c:forEach>
+		<input type="submit" value="Print View" />
+	</bbNG:form>
+	
+	<!-- Main File List Form -->
 	<bbNG:form action="save" method="post">
 		<bbNG:dataCollection>
 			<bbNG:step title="${verify_file}">
+
 				<!-- The actual user interactable filter selection, it sets the metadataForm with user given config. -->
 				<bbNG:dataElement>
 					<h3>File Filters</h3>
@@ -97,12 +146,11 @@ pageContext.setAttribute("version", BuildingBlockHelper.getVersion());
 						id="limitLinked2" value="true" 
 						onclick="ubc_m_setFilter('limitLinked', this);" isSelected="${limitLinked}"></bbNG:checkboxElement>
 					<br />
-					<input type="button" value="Apply" onclick="$('metadataFilter').submit();" /> 
+					<bbNG:button label="Apply" onClick="$('metadataFilter').submit();" id="filter_apply_button" /> 
+					<!-- Print view button, placed here for convenient styling -->
+					<bbNG:button onClick="ubc_m_printView();" label="Print View" id="print_view_button" />
 				</bbNG:dataElement>
 				
-				<div style="width: 100%; text-align: right;">
-					<input type="button" value="Print" onclick="printView();" id="print_button"/>
-				</div> 
 				<metadatabbNG:metadataInventoryList collection="${files}" objectVar="file" 
 					className="FileWrapper" description="${list_selected_files}" enableSelectEntireList="${canSelectAll}"
 					initialSortCol="file" includePageParameters="true" session="<%=ctx.getSession()%>">
@@ -185,59 +233,4 @@ pageContext.setAttribute("version", BuildingBlockHelper.getVersion());
 	
 	<p id="tinyfootnote">Version: ${version}<br />Open source project, available on <a href="https://github.com/ubc/metadata-editor-b2" target="_blank">Github</a></p>
 	
-	<script type="text/javascript">
-		document.observe("dom:loaded", function() {
-			var row = $$('#copyrightCountDiv tbody tr');
-			var title = '<c:out value="${list_selected_files}" ></c:out>';
-			var tab = $$('#listContainer_datatable[title="' + title + '"] tbody');
-			$(row.first().childElements()).each(function(node){node.setStyle({
-					'border-top': '2px solid #ccc'
-				});
-			});
-			tab.first().insert(row.first());
-		});
-		
-		function printView() {
-			if ("${fn:length(files)}" > 1000) {
-				var msg = '<c:out value="${too_many_files_print}" ></c:out>';
-				if(!confirm(msg)) {
-					return false;
-				}
-			}
-			
-			$("print_button").disable();
-			
-			dataString = "referer=${referer}";
-			<c:if test="${not empty path}">
-				dataString += "&path=${path}";
-			</c:if>
-			<c:forEach var="file" items="${fileSet}" varStatus="rowCounter">
-				dataString += "&files${rowCounter.count}=${file}";
-			</c:forEach>
-		
-			var options = { 
-                    method: "post", 
-                    parameters: dataString,
-                    onComplete: submitForm 
-                }; 
-        	new Ajax.Request('printView', options);
-        	
-			return false;
-		}
-		
-		function submitForm(resp) {
-			$("print_button").enable();
-			var params = [
-			              'height='+screen.height,
-			              'width='+screen.width,
-			              'fullscreen=yes'
-			          ].join(',');
-			
-			win = window.open("","Print view",params);
-			win.document.open();
-			win.document.write(resp.responseText);
-			win.document.close();
-			win.print();
-		}
-	</script>
 </bbNG:learningSystemPage>
