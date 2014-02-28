@@ -4,12 +4,15 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpSession;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.MessageSource;
@@ -32,10 +35,14 @@ import blackboard.persist.PersistenceException;
 import blackboard.platform.context.ContextManagerFactory;
 import blackboard.platform.forms.Form;
 import blackboard.platform.log.LogServiceFactory;
+import blackboard.platform.plugin.PlugIn;
+import blackboard.platform.plugin.PlugInManager;
+import blackboard.platform.plugin.PlugInManagerFactory;
+import blackboard.platform.plugin.PlugInUtil;
 import blackboard.platform.servlet.InlineReceiptUtil;
-import ca.ubc.ctlt.metadataeditor.CopyrightAlertsInterface.IndexUpdater;
 import ca.ubc.ctlt.metadataeditor.inventoryList.MetadataInventoryListTag;
 
+import com.google.gson.Gson;
 import com.spvsoftwareproducts.blackboard.utils.B2Context;
 import com.xythos.common.api.XythosException;
 import com.xythos.storageServer.api.FileSystemEntry;
@@ -158,14 +165,24 @@ public class MetadataController {
 			}
 		}
 
+		// stores a list of files that hasn't been tagged before
+		Set<String> newlyTaggedFiles = new HashSet<String>(allFiles);
 		// Save the new metadata values in a single transaction. 
 		try {
 			ctxCS = CSContext.getContext();
 			for (String file : allFiles) {
+				boolean isNewlyTagged = true;
 				for (MetadataAttribute attribute : attributes) {
 					CSEntry entry = ctxCS.findEntry(file);
 					CSEntryMetadata metadata = entry.getCSEntryMetadata();
+					String prevVal = metadata.getStandardProperty(attribute.getId());
+					if (!prevVal.isEmpty()) {
+						isNewlyTagged = false;
+					}
 					metadata.setStandardProperty(attribute.getId(), (attribute.getValue() == null ? "" : attribute.getValue()));
+				}
+				if (!isNewlyTagged) {
+					newlyTaggedFiles.remove(file);
 				}
 			}
 		} catch (Exception e) {
@@ -179,13 +196,6 @@ public class MetadataController {
 					throw new RuntimeException(messageSource.getMessage("message.contact_admin", null, locale), e);
 				}
 			}
-		}
-		
-		// update copyright alerts index
-		IndexUpdater indexupdater = new IndexUpdater();
-		boolean ret = indexupdater.update(allFiles);
-		if (!ret) { // copyright alerts index update failed
-			ro.addWarningMessage(messageSource.getMessage("message.save_change_index_update_fail", null, locale));
 		}
 		
 		if (fileSelected == null) {
@@ -216,6 +226,29 @@ public class MetadataController {
 					redirectAttributes.addAttribute(parameter, values[0]);
 				}
 			}
+		}
+
+		// Set parameters required for notifying the copyright alerts building block
+		// about files that's been modified. We don't want the Blackboard server to
+		// issue this request for performance reasons, so have to get the user's
+		// browser to issue it instead. This part is mainly concerned about passing
+		// the required parameters to the Javascript that'll do the request to copyright
+		// alerts.
+		// First, see if the ubc-copyright-alerts building block is installed
+		PlugInManager pman = PlugInManagerFactory.getInstance();
+		PlugIn p = pman.getPlugIn("ubc", "copyright-alerts"); // real copyright alerts
+		if (p != null && !newlyTaggedFiles.isEmpty())
+		{ // copyright alerts building block is installed and there are newly tagged files
+			// We're using session to pass these data instead of redirect attributes
+			// because bbNG:inventoryList's paging is broken with redirect attributes.
+			// The "next" button url includes all param, such as the potentially
+			// extremely long filesJson string, which will error out Tomcat.
+			HttpSession session = webRequest.getSession();
+			session.setAttribute("alertsB2Url", PlugInUtil.getUri(p, "ondemandindexer/processfiles"));
+			HashMap<String, Set<String>> processFiles = new HashMap<String, Set<String>>();
+			processFiles.put("files", newlyTaggedFiles);
+			Gson gson = new Gson();
+			session.setAttribute("filesJson", gson.toJson(processFiles));
 		}
 
 		return "redirect:list";
@@ -287,7 +320,7 @@ public class MetadataController {
 					noPermission = true;
 				}
 			}
-			if (!forPrint && files.size() > 1000) {
+			if (!forPrint && files.size() > 200) {
 				//canSelectAll = "false";
 				ro.addWarningMessage(messageSource.getMessage("message.too_many_files", null, locale));
 			}

@@ -77,7 +77,7 @@ pageContext.setAttribute("version", BuildingBlockHelper.getVersion());
 	}
 
 	function ubc_m_printView() {
-		if ("${fn:length(files)}" > 500) {
+		if ("${fn:length(files)}" > 200) {
 			var msg = '<c:out value="${too_many_files_print}" ></c:out>';
 			if(!confirm(msg)) {
 				return false;
@@ -88,6 +88,34 @@ pageContext.setAttribute("version", BuildingBlockHelper.getVersion());
 		$('metadataPrintView').submit();
 		return false;
 	}
+	
+	/* I don't know why, but variables set by RedirectAttributes in the controller
+	doesn't get resolved properly in the jsp unless you specifically tell it to
+	look in the right scope (e.g.: param.var). An exception is that variables that
+	start with "file" seems to work fine, no idea why that is. Session luckily
+	doesn't seem to be affected. */
+	<c:if test="${not empty alertsB2Url and not empty filesJson}">
+		// for updating the copyright alerts building block when previously untagged files
+		// gets tagged.
+		function ubc_m_notifyAlerts()
+		{
+			var alertsB2Url = "${alertsB2Url}";
+			var filesJson = '${filesJson}';
+	
+			var options = 
+				{
+					method: 'post',
+					parameters: filesJson,
+					contentType: 'application/json',
+					asynchronous: false // intentional to make sure that the alerts building block is updated
+				};
+			new Ajax.Request(alertsB2Url, options);
+		}
+		ubc_m_notifyAlerts();
+		// make sure to clean up session afterwards
+		<c:remove var="alertsB2Url" scope="session" />
+		<c:remove var="filesJson" scope="session" />
+	</c:if>
 	</script>
 	</bbNG:jsBlock>
 
