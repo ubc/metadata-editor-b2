@@ -94,18 +94,18 @@ pageContext.setAttribute("version", BuildingBlockHelper.getVersion());
 	look in the right scope (e.g.: param.var). An exception is that variables that
 	start with "file" seems to work fine, no idea why that is. Session luckily
 	doesn't seem to be affected. */
-	<c:if test="${not empty alertsB2Url and not empty filesJson}">
+	<c:if test="${not empty alertsB2Url and not empty alertsFilesJson}">
 		// for updating the copyright alerts building block when previously untagged files
 		// gets tagged.
 		function ubc_m_notifyAlerts()
 		{
 			var alertsB2Url = "${alertsB2Url}";
-			var filesJson = '${filesJson}';
+			var alertsFilesJson = '${alertsFilesJson}';
 	
 			var options = 
 				{
 					method: 'post',
-					parameters: filesJson,
+					parameters: alertsFilesJson,
 					contentType: 'application/json',
 					asynchronous: false // intentional to make sure that the alerts building block is updated
 				};
@@ -114,7 +114,7 @@ pageContext.setAttribute("version", BuildingBlockHelper.getVersion());
 		ubc_m_notifyAlerts();
 		// make sure to clean up session afterwards
 		<c:remove var="alertsB2Url" scope="session" />
-		<c:remove var="filesJson" scope="session" />
+		<c:remove var="alertsFilesJson" scope="session" />
 	</c:if>
 	</script>
 	</bbNG:jsBlock>
@@ -238,9 +238,6 @@ pageContext.setAttribute("version", BuildingBlockHelper.getVersion());
 			<c:if test="${not empty path}">
 				<input type="hidden" name="path" value="${path}" />
 			</c:if>
-			<c:forEach var="file" items="${fileSet}">
-				<input type="hidden" name="files" value="${file}" />
-			</c:forEach>
 
 		</bbNG:dataCollection>
 	</bbNG:form>   

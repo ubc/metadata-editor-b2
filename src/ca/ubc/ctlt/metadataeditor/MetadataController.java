@@ -10,6 +10,8 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
@@ -50,6 +52,14 @@ import com.xythos.storageServer.api.FileSystemEntry;
 @Controller
 @RequestMapping("/metadata")
 public class MetadataController {
+	
+	/**
+	 * When in the content collection, the user selects files for metadata editing,
+	 * which is then submitted to this building block. We need to store this
+	 * selection in session in order for paging to work. This constant defines the
+	 * key we use to access this stored selection from the session.
+	 */
+	private static final String FILES_SELECTED_FROM_CC = "ubc_metadata_files_selected_from_cc";
 	
 	@Autowired
     private MessageSource messageSource;
@@ -97,9 +107,9 @@ public class MetadataController {
 	public String save(HttpServletRequest webRequest, RedirectAttributes redirectAttributes, Locale locale) {
 		String[] fileSelected = webRequest.getParameterValues("fileSelected");
 		String selectedAll = webRequest.getParameter("selectAllFromList");
-		String[] files = webRequest.getParameterValues("files");
 		B2Context b2context = new B2Context(webRequest);
 		ReceiptOptions ro = new ReceiptOptions();
+		HttpSession session = webRequest.getSession();
 
 		CSContext ctxCS = null;
 		List<String> allFiles = new ArrayList<String>();
@@ -107,7 +117,8 @@ public class MetadataController {
 			ctxCS = CSContext.getContext();
 			// if in selected all mode
 			if ("true".equals(selectedAll)) {
-				for (String file : files) {
+				List<String> filesSelectedFromCC = (List<String>) session.getAttribute(FILES_SELECTED_FROM_CC);
+				for (String file : filesSelectedFromCC) {
 					List<String> f = new ArrayList<String>();
 					MetadataUtil.getFilesInPath(f, file);
 					allFiles.addAll(f);
@@ -198,7 +209,8 @@ public class MetadataController {
 			}
 		}
 		
-		if (fileSelected == null) {
+		// fileSelected is empty when the user selects all, so must account for that when checking if user has made no selections
+		if (fileSelected == null && !"true".equals(selectedAll)) {
 			ro.addWarningMessage(messageSource.getMessage("message.save_change_empty", null, locale));
 		}
 		else if (allFiles.isEmpty()) {
@@ -210,12 +222,6 @@ public class MetadataController {
 
 		InlineReceiptUtil.addReceiptToRequest(webRequest, ro);
 
-		// forwarding the parameters for the list page
-		int i = 0;
-		for (String file : files) {
-			redirectAttributes.addAttribute("file" + i, file);
-			i++;
-		}
 		// forward single value parameters that aren't files, this is needed to persist file filters
 		Map<String, String[]> parameters = webRequest.getParameterMap();
 		for (String parameter : parameters.keySet()) {
@@ -243,12 +249,11 @@ public class MetadataController {
 			// because bbNG:inventoryList's paging is broken with redirect attributes.
 			// The "next" button url includes all param, such as the potentially
 			// extremely long filesJson string, which will error out Tomcat.
-			HttpSession session = webRequest.getSession();
 			session.setAttribute("alertsB2Url", PlugInUtil.getUri(p, "ondemandindexer/processfiles"));
 			HashMap<String, Set<String>> processFiles = new HashMap<String, Set<String>>();
 			processFiles.put("files", newlyTaggedFiles);
 			Gson gson = new Gson();
-			session.setAttribute("filesJson", gson.toJson(processFiles));
+			session.setAttribute("alertsFilesJson", gson.toJson(processFiles));
 		}
 
 		return "redirect:list";
@@ -260,6 +265,7 @@ public class MetadataController {
 		B2Context b2Context = new B2Context(webRequest);
 		CSContext ctxCS = null;
 		String canSelectAll = "true";
+		// RecepitOptions is Blackboard's mechanism for displaying Success, Warning, Error messages to the user.
 		// Don't create a new object unless it's empty. Otherwise, it will override the message passed from another action
 		ReceiptOptions ro = InlineReceiptUtil.getReceiptFromRequest(webRequest);
 		if (null == ro) {
@@ -291,22 +297,36 @@ public class MetadataController {
 		// when clicked on cancel or OK
 		model.addAttribute("referer", webRequest.getParameter("referer"));
 		
-		// loading the selected files
-		String path = webRequest.getParameter("path");
-		if (null != path && !path.isEmpty() ) {
-			fileSet.add(path);
-		} else {
-			Map<String, String[]> parameters = webRequest.getParameterMap();
-			for (String parameter : parameters.keySet()) {
-				if (parameter.toLowerCase().startsWith("file")) {
-					String[] values = parameters.get(parameter);
-					if (1 >= values.length) {
-						fileSet.add(values[0]);
-						model.addAttribute(parameter, values[0]);
-					}
+		// Get the list of files the user selected from the content collection.
+
+		// On the initial load, the files selected is coming from the content
+		// collection in the request parameters.
+		boolean loadFilesFromSession = true; // check for files in the session only if we can't find it in params
+		Map<String, String[]> parameters = webRequest.getParameterMap();
+		Pattern filePathKeyPattern = Pattern.compile("^file\\d+$");
+		Matcher filePathMatcher = filePathKeyPattern.matcher("");
+		for (String parameter : parameters.keySet()) {
+			if (filePathMatcher.reset(parameter).matches()) {
+				String[] values = parameters.get(parameter);
+				if (1 >= values.length) {
+					String path = values[0];
+					fileSet.add(path);
+					model.addAttribute(parameter, path);
+					loadFilesFromSession = false;
 				}
 			}
 		}
+		HttpSession session = webRequest.getSession();
+		if (!loadFilesFromSession && !fileSet.isEmpty()) {
+			// store the files selected in session
+			session.setAttribute(FILES_SELECTED_FROM_CC, fileSet);
+		}
+		// On subsequent loads (e.g.: after save and after paging), the files selected 
+		// should be loaded from session
+		if (loadFilesFromSession) {
+			fileSet = (List<String>) session.getAttribute(FILES_SELECTED_FROM_CC);
+		}
+
 		
 		try {
 			ctxCS = CSContext.getContext();
