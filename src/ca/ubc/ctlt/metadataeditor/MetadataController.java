@@ -316,6 +316,14 @@ public class MetadataController {
 				}
 			}
 		}
+		// User might also be coming from selecting "Edit Copyright Status" in a file's drop down menu, this uses a different 
+		// parameter than from the same button in the tool bar.
+		String path = webRequest.getParameter("path");
+		if (path != null)
+		{
+			fileSet.add(path);
+			loadFilesFromSession = false;
+		}
 		HttpSession session = webRequest.getSession();
 		if (!loadFilesFromSession && !fileSet.isEmpty()) {
 			// store the files selected in session
@@ -323,7 +331,7 @@ public class MetadataController {
 		}
 		// On subsequent loads (e.g.: after save and after paging), the files selected 
 		// should be loaded from session
-		if (loadFilesFromSession) {
+		if (loadFilesFromSession && session.getAttribute(FILES_SELECTED_FROM_CC) != null) {
 			fileSet = (List<String>) session.getAttribute(FILES_SELECTED_FROM_CC);
 		}
 
