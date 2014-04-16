@@ -169,6 +169,10 @@ public class MetadataController {
 		List<MetadataAttribute> attributes = MetadataUtil.getMetadataAtttributes(b2context.getSetting(MetadataUtil.FORM_ID));
 		for (MetadataAttribute attribute : attributes) { 
 			String value = webRequest.getParameter(key + attribute.getId());
+			if (value == null)
+			{
+				value = webRequest.getParameter(key + attribute.getId() + "text");
+			}
 			if ("Boolean".equals(attribute.getType())) {
 				attribute.setValue(value==null?"N":"Y");
 			} else {
