@@ -70,6 +70,13 @@
 			<permission type="attribute" name="user.*" actions="get" />
 			<permission type="persist" name="Content" actions="persist" />
             <permission type="java.net.SocketPermission" name="*.lms.it.ubc.ca*" actions="connect,resolve" />
+			<!-- Required to enable complete Content System functionality, see CSContext documentation -->
+			<permission type="java.lang.RuntimePermission" name="db.connection.*" />
+			<permission type="attribute" name="user.authinfo" actions="get,set" /> 
+			<permission type="attribute" name="user.personalinfo" actions="get,set" />
+			<permission type="persist" name="user" actions="create,modify,delete" />
+			<permission type="persist" name="userrole" actions="create,modify,delete" />
+			<permission type="persist" name="course" actions="create,modify,delete" />
 		</permissions>
 
 	</plugin>
