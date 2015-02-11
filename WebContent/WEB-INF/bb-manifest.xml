@@ -37,19 +37,19 @@
 					<link>
 						<type value="cs_modify_file" />
 						<name value="plugin.application.cs_modify_file.name" />
-						<url value="/metadata/list" />
+						<url value="metadata/list" />
 						<description value="plugin.application.cs_modify_file.description" />
 					</link>
 					<link>
 						<type value="cs_action" />
 						<name value="plugin.application.cs_action.name" />
-						<url value="/metadata/list" />
+						<url value="metadata/list" />
 						<description value="plugin.application.cs_action.description" />
 					</link>
 					<link>
 						<type value="cs_modify_folder" />
 						<name value="plugin.application.cs_modify_folder.name" />
-						<url value="/metadata/list" />
+						<url value="metadata/list" />
 						<description value="plugin.application.cs_modify_folder.description" />
 					</link>
 				</links>
