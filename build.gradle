@@ -1,0 +1,100 @@
+apply plugin: "java"
+apply plugin: "war"
+apply plugin: "maven"
+apply plugin: "eclipse"
+apply plugin: "idea"
+
+// Uncomment if your project has an API JAR
+//apply from: "api.gradle"
+
+// define the version for the project when publishing to maven
+group "ca.ubc"
+version "1.1.3"
+
+webAppDirName = file("WebContent")
+sourceCompatibility = '1.7'
+targetCompatibility = '1.7'
+
+sourceSets {
+    main {
+        java {
+            srcDir 'src'
+        }
+        resources {
+            srcDir 'WebContent/WEB-INF/bundles'
+        }
+    }
+}
+
+ext {
+    learnVersion = "9.1.201410.160373"
+    deployServer = "127.0.0.1:9876"
+    deployInstance = "BBLEARN"
+}
+
+repositories {
+    mavenCentral()
+    maven {
+        url "https://maven.blackboard.com/content/repositories/releases/"
+    }
+    maven {
+        url "http://artifactory.ctlt.ubc.ca/artifactory/ctlt-release-local/"
+    }
+}
+
+configurations {
+    buildUtils
+}
+
+// define the project's dependencies
+dependencies {
+    providedCompile "javax.servlet:servlet-api:2.5",
+            "javax.servlet.jsp:jsp-api:2.1"
+
+    // Dependencies are libraries needed to build, but should not be included in the B2 WAR.
+    // You should NEVER include Learn JARs (other than webapis) in your B2.
+    providedCompile("blackboard.platform:bb-platform:$ext.learnVersion") { transitive = false }
+    providedCompile("blackboard.platform:bb-taglibs:$ext.learnVersion") { transitive = false }
+    providedCompile("blackboard.platform:bb-bbxythos:$learnVersion") { transitive = false }
+    providedCompile("blackboard.platform:xsscore:$learnVersion") { transitive = false }
+
+    // Building a Spring B2?  Use our Spring APIs!
+    // compile "blackboard.platform:bb-spring-webapi:10.1"
+
+    // Include the Blackboard security APIs for protecting your B2.
+    // providedCompile "blackboard.plugin:security:1.0:api"
+
+    // Dependencies that are only necessary at runtime so should be included in the WAR
+    // runtime "org.javassist:javassist:3.17.1-GA"
+
+    buildUtils "org.oscelot:b2deploy-task:0.1.0"
+
+    compile "com.spvsoftwareproducts:b2context:1.6.01",
+            'com.google.code.gson:gson:2.2.4',
+            'commons-logging:commons-logging:1.2',
+            'log4j:log4j:1.2.17',
+            'org.slf4j:slf4j-api:1.6.6',
+            'org.slf4j:slf4j-log4j12:1.6.6',
+            'org.springframework:spring-core:3.1.0.RELEASE',
+            'org.springframework:spring-asm:3.1.0.RELEASE',
+            'org.springframework:spring-beans:3.1.0.RELEASE',
+            'org.springframework:spring-context:3.1.0.RELEASE',
+            'org.springframework:spring-context-support:3.1.0.RELEASE',
+            'org.springframework:spring-expression:3.1.0.RELEASE',
+            'org.springframework:spring-web:3.1.0.RELEASE',
+            'org.springframework:spring-webmvc:3.1.0.RELEASE'
+}
+
+test {
+    useTestNG()
+}
+
+// Add a task to deploy a B2 using starting block
+task deployB2(dependsOn: "war") << {
+    ant.taskdef(name: "b2deploy", classname: "org.oscelot.ant.B2DeployTask", classpath: project.configurations.buildUtils.asPath)
+    ant.b2deploy(localfilepath: project.war.archivePath, host: project.ext.deployServer, courseorgavailable: 'true', clean: 'true', webappName: 'bb-starting-block-' + project.ext.deployInstance)
+}
+
+task wrapper(type: Wrapper) {
+    gradleVersion = '1.8'
+}

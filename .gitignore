@@ -6,4 +6,8 @@
 # java
 *.class
 bin/
+build/
 *.war
+.gradle
+.idea
+.settings
