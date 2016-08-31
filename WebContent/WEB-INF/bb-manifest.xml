@@ -69,7 +69,7 @@
             <permission type="java.util.PropertyPermission" name="*" actions="read,write" />
 			<permission type="attribute" name="user.*" actions="get" />
 			<permission type="persist" name="Content" actions="persist" />
-            <permission type="java.net.SocketPermission" name="*.lms.it.ubc.ca*" actions="connect,resolve" />
+            <permission type="java.net.SocketPermission" name="*" actions="connect,resolve" />
 			<!-- Required to enable complete Content System functionality, see CSContext documentation -->
 			<permission type="java.lang.RuntimePermission" name="db.connection.*" />
 			<permission type="attribute" name="user.authinfo" actions="get,set" />

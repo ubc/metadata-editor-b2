@@ -26,10 +26,10 @@ import com.xythos.common.api.XythosException;
 public class MetadataUtil {
 	public static final String FORM_ID = "form_id";
 	public static List<MetadataAttribute> attributes = null;
-	
+
 	public static List<MetadataAttribute> getMetadataAtttributes(String formIdString) {
 		List<MetadataAttribute> attributes = new ArrayList<MetadataAttribute>();
-		
+
 		try {
 			// find form by form ID
 			Id formId = Id.generateId(Form.DATA_TYPE, formIdString);
@@ -51,17 +51,17 @@ public class MetadataUtil {
 			LogServiceFactory.getInstance().logError("Exception occured while loading form or attribute.", e);
 			throw new RuntimeException("Loading form or attribute definitions failed.", e);
 		}
-		
+
 		return attributes;
 	}
-	
+
 	public static Map<String, Object> getMetadata(String formIdString, String filepath) {
-		
+
 		// load all attribute IDs
 		if (attributes == null || attributes.isEmpty()) {
 			attributes = MetadataUtil.getMetadataAtttributes(formIdString);
 		}
-		
+
 		CSContext ctxCS = null;
 		Map<String, Object> ret = new HashMap<String, Object>();
 		try {
@@ -74,7 +74,7 @@ public class MetadataUtil {
 				// BbAttributes.getXXX() may return null.
 				if ("Boolean".equals(attribute.getType())) {
 					ret.put(attribute.getId(), bbAttributes.getBoolean(attribute.getId()));
-				} else if ("Short String".equals(attribute.getType())||"String".equals(attribute.getType())||"Long String".equals(attribute.getType()) || "Unlimited String".equals(attribute.getType())) {
+				} else if ("Short String".equals(attribute.getType())||"String".equals(attribute.getType())||"Long String".equals(attribute.getType()) || "Unlimited String".equals(attribute.getType()) || "Medium String".equals(attribute.getType())) {
 					ret.put(attribute.getId(), bbAttributes.getString(attribute.getId()));
 				} else if ("Integer".equals(attribute.getType())) {
 					ret.put(attribute.getId(), bbAttributes.getInteger(attribute.getId()));
@@ -101,13 +101,13 @@ public class MetadataUtil {
 				}
 			}
 		}
-		
+
 		return ret;
 	}
-	
+
 	public static void getFilesInPathWithMetadata(List<FileWrapper> files, CSEntry entry, int startIndex, int numResults) {
 		if (entry instanceof CSFile) {
-			// mark the files that are not showing on the page 
+			// mark the files that are not showing on the page
 			files.add(new FileWrapper((CSFile)entry));
 		} else if (entry instanceof CSDirectory) {
 			CSDirectory dir = (CSDirectory) entry;
@@ -117,8 +117,8 @@ public class MetadataUtil {
 			}
 		}
 	}
-	
-	
+
+
 	public static void getFilesInPath(List<String> files, String entryString) {
 		CSContext ctxCS = CSContext.getContext();
 		CSEntry entry = ctxCS.findEntry(entryString);
